@@ -17,7 +17,7 @@ from snipsmatrix import SnipsMatrix
 CONFIGURATION_ENCODING_FORMAT = "utf-8"
 CONFIG_INI = "config.ini"
 
-MQTT_IP_ADDR = "localhost"
+MQTT_IP_ADDR = "ledtest.local"
 MQTT_PORT = 1883
 MQTT_ADDR = "{}:{}".format(MQTT_IP_ADDR, str(MQTT_PORT))
 

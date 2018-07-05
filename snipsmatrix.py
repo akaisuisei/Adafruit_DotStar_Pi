@@ -24,16 +24,21 @@ class Animation:
         self.strip = strip
 
     def show(self):
-        for x in range(Animation.width):
-            for y in range(Animation.height):
+        for y in range(Animation.height):
+            for x in range(Animation.width):
                 p = self.pixels[self.item][x, y]
-                self.strip.setPixelColor(y, Animation.gamma[p[0]], 
-                                         Animation.gamma[p[1]],
-                                         Animation.gamma[p[2]])
+                self.strip.setPixelColor(x+(y*Animation.width), 
+                        Animation.gamma[p[0]],
+                        Animation.gamma[p[1]],
+                        Animation.gamma[p[2]])
             self.strip.show()
         self.item += 1
         self.item %= self.num_image
-        time.sleep(0.5)
+
+    def clear(self,color):
+        for y in range(128):
+            self.strip.setPixelColor(y, color)
+        self.strip.show()
 
 class SnipsMatrix:
     queue = Queue.Queue()
@@ -44,22 +49,23 @@ class SnipsMatrix:
     def worker():
         item = ""
         while True:
+            time.sleep(0.01)
             if (not SnipsMatrix.queue.empty()):
                 item = SnipsMatrix.queue.get_nowait()
                 SnipsMatrix.queue.task_done()
             if (item == "hotword"):
-                if (SnipsMatrix.state_hotword is not None):
-                    SnipsMatrix.state_hotword.show()
+                SnipsMatrix.state_hotword.show()
             if (item == "waiting"):
-                if (SnipsMatrix.state_waiting is not None):
-                    SnipsMatrix.state_waiting.show()
+                SnipsMatrix.state_hotword.clear(0x000000)
+                item =""
 
     def __init__(self):
         numpixels = 128
         datapin   = 10
         clockpin  = 11
-        strip     = Adafruit_DotStar(numpixels, datapin, clockpin, 1000000)
-        strip.begin()           # Initialize pins for output
+        strip = Adafruit_DotStar(numpixels, datapin, clockpin, 2000000)
+        strip.begin()
+        strip.setBrightness(64)
         SnipsMatrix.state_hotword = Animation('hotword', strip)
         SnipsMatrix.queue.put("hotword")
         SnipsMatrix.queue.put("waiting")

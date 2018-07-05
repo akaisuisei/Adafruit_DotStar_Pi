@@ -6,16 +6,14 @@ import json
 import os
 import time
 import threading
-from crontab import CronTab
 from datetime import datetime
-import requests
 import paho.mqtt.client as mqtt
 from snipsmatrix import SnipsMatrix
 
 CONFIGURATION_ENCODING_FORMAT = "utf-8"
 CONFIG_INI = "config.ini"
 
-MQTT_IP_ADDR = "localhost"
+MQTT_IP_ADDR = "ledtest.local"
 MQTT_PORT = 1883
 MQTT_ADDR = "{}:{}".format(MQTT_IP_ADDR, str(MQTT_PORT))
 
@@ -29,7 +27,6 @@ dial_open = 'hermes/dialogueManager/sessionStarted'
 dial_close = 'hermes/dialogueManager/sessionEnded'
 skill = SnipsMatrix()
 def dialogue_open(client, userdata, msg):
-    print("toto")
     skill.hotword_detected()
 
 def dialogue_close(client, userdata, msg):
