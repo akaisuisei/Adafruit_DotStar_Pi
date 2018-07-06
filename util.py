@@ -7,10 +7,10 @@ number_bit_0 = [
 
 number_bit_1 = [
      [0, 1, 0],
-     [1, 1, 0],
      [0, 1, 0],
      [0, 1, 0],
-     [1, 1, 1]]
+     [0, 1, 0],
+     [0, 1, 0]]
 
 number_bit_2 = [
      [1, 1, 1],
@@ -75,5 +75,5 @@ number_bit = [
     number_bit_6,
     number_bit_7,
     number_bit_8,
-    number_bit_9,
+    number_bit_9
 ]

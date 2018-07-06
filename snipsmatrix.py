@@ -1,5 +1,6 @@
 from dotstar import Adafruit_DotStar
 import glob
+from os.path import expanduser
 from PIL import Image
 import Queue
 import subprocess
@@ -8,6 +9,9 @@ import threading
 import time
 import os
 
+import util
+
+TIMER = 30
 CONFIG_INI_DIR =  expanduser("~/.matrix/")
 
 class Animation:
@@ -47,9 +51,39 @@ class AnimationTime():
     def __init__(self, strip):
         self.strip = strip
 
-    def show(second):
-        self.clear(0)
+    def show(self, second):
+        def draw_number(arr, x_start, y_start, color):
+            for x in range(3):
+                for y in range(5):
+                    if c1[y][x] == 1:
+                        pos = x + x_start + (y + y_start) * Animation.width
+                        self.strip.setPixelColor(pos, color)
 
+        def draw_line(x, y, l, color):
+            for tmp in range(l):
+                pos = x + tmp + y * Animation.width
+                self.strip.setPixelColor(pos, color)
+        self.clear(0)
+        print( "show number")
+        second = int(second)
+        second %= (60 * 60 * 24)
+        if second > 60 * 60:
+            t1 = second / (60 * 60)
+            t2 = (second % (60 * 60)) / 60
+        else:
+            t1 = second / 60
+            t2 = second % 60
+        c1 = util.number_bit[t1 / 10]
+        c2 = util.number_bit[t1 % 10]
+        c3 = util.number_bit[t2 / 10]
+        c4 = util.number_bit[t2 % 10]
+        color = 0xFFFFFF
+        draw_number(c1, 1, 1, color)
+        draw_number(c2, 5, 1, color)
+        draw_line(3, 7, 3, color)
+        draw_number(c3, 1, 9, color)
+        draw_number(c4, 5, 9, color)
+        self.strip.show()
     def clear(self,color):
         for y in range(128):
             self.strip.setPixelColor(y, color)
@@ -82,13 +116,18 @@ class SnipsMatrix:
         SnipsMatrix.queue.put("hotword")
 
     def stop(self):
+        print('stop')
         self.stop_all_timer()
         SnipsMatrix.queue.put("waiting")
 
     def save_image(self, name, directory, image):
         if not os.path.exists(CONFIG_INI_DIR):
                 os.makedirs(CONFIG_INI_DIR)
-        f_name = "{}/{}/{}".format(CONFIG_INI_DIR, directory, name)
+        if not os.path.exists(CONFIG_INI_DIR + directory):
+                os.makedirs(CONFIG_INI_DIR + directory)
+        f_name = "{}{}/{}".format(CONFIG_INI_DIR, directory, name)
+        if (image is None):
+            return
         try:
             with open(f_name, 'w') as f:
                 f.write(image)
@@ -99,17 +138,18 @@ class SnipsMatrix:
         if duration is None:
             duration = 70
         SnipsMatrix.stop_all_timer()
-        SnipsMatrix.create_stop_timer(duration)
+        SnipsMatrix.create_timer_time(duration)
 
     def show_animation(self, name, duration):
         SnipsMatrix.queue.put(name)
+        self.stop_all_timer()
         if duration is not None:
-            self.stop_all_timer()
-
+            SnipsMatrix.create_stop_timer(duration)
     def show_timer(self, duration):
         if duration is None:
             return
         self.stop_all_timer()
+        SnipsMatrix.create_timer(duration)
 
     @staticmethod
     def worker():
@@ -119,8 +159,10 @@ class SnipsMatrix:
             if (not SnipsMatrix.queue.empty()):
                 item = SnipsMatrix.queue.get_nowait()
                 SnipsMatrix.queue.task_done()
-            if isinstance(item, (int, long)):
-                pass
+                print(item)
+            if isinstance(item, (int, long, float)):
+                SnipsMatrix.state_time.show(item)
+                item =""
             elif (item == "hotword"):
                 SnipsMatrix.state_hotword.show()
             elif (item == "waiting"):
@@ -129,34 +171,34 @@ class SnipsMatrix:
 
     @staticmethod
     def create_timer(duration):
-        SnipsMatrix.timerstop = threading.Timer(duration, stop_animation)
-        SnipsMatrix.timerstop.start()
+        SnipsMatrix.create_stop_timer(duration + 1)
+        SnipsMatrix.queue.put(duration)
         SnipsMatrix.timer = threading.Timer(1,
                                             SnipsMatrix.worker_timer,
-                                           args=(duration))
+                                           args=[duration])
         SnipsMatrix.timer.start()
 
     @staticmethod
     def worker_timer(duration):
         duration -= 1
+        SnipsMatrix.queue.put(duration)
         SnipsMatrix.timer = threading.Timer(1,
                                             SnipsMatrix.worker_timer,
-                                           args=(duration))
-        SnipsMatrix.queue.put(duration)
+                                           args=[duration])
         SnipsMatrix.timer.start()
-
     @staticmethod
     def create_timer_time(duration):
-        SnipsMatrix.timerstop = threading.Timer(duration, stop_animation)
-        SnipsMatrix.timerstop.start()
-        SnipsMatrix.timer = threading.Timer(30,SnipsMatrix.worker_timer_time)
+        SnipsMatrix.create_stop_timer(duration)
+        SnipsMatrix.queue.put(time.time())
+        SnipsMatrix.timer = threading.Timer(TIMER,
+                                            SnipsMatrix.worker_timer_time)
         SnipsMatrix.timer.start()
 
     @staticmethod
     def worker_timer_time():
-        SnipsMatrix.timer = threading.Timer(30,SnipsMatrix.worker_timer_time)
-        SnipsMatrix.timer.start()
         SnipsMatrix.queue.put(time.time())
+        SnipsMatrix.timer = threading.Timer(TIMER,
+                                            SnipsMatrix.worker_timer_time)
         SnipsMatrix.timer.start()
 
     @staticmethod
@@ -168,11 +210,12 @@ class SnipsMatrix:
     def stop_all_timer():
         if SnipsMatrix.timerstop:
             SnipsMatrix.timerstop.cancel()
-            SnipsMatrix.timerstop = None
+            del SnipsMatrix.timerstop
         if SnipsMatrix.timer:
             SnipsMatrix.timer.cancel()
-            SnipsMatrix.timer = None
+            del SnipsMatrix.timer
 
     @staticmethod
     def stop_animation():
+        SnipsMatrix.stop_all_timer()
         SnipsMatrix.queue.put("waiting")
