@@ -34,6 +34,7 @@ show_timer = 'concierge/feedback/led/{}/timer'.format(site_id)
 stop_display = 'concierge/feedback/led/{}/stop'.format(site_id)
 add_image = 'concierge/feedback/led/{}/add/#'.format(site_id)
 skill = SnipsMatrix()
+
 def dialogue_open(client, userdata, msg):
     skill.hotword_detected()
 
@@ -53,18 +54,18 @@ def save_image(client, userdata, msg):
 def display_time(client, userdata, msg):
     data = json.loads(msg.payload)
     duration = data['duration']
-    skill.time(duration)
+    skill.show_time(duration)
 
 def display_animation(client, userdata, msg):
     data = json.loads(msg.payload)
     animation = data['animation']
     duration = data['duration']
-    skill.animation(animation, duration)
+    skill.show_animation(animation, duration)
 
 def display_timer(client, userdata, msg):
     data = json.loads(msg.payload)
     duration = data['duration']
-    skill.timer(duration)
+    skill.show_timer(duration)
 
 def on_connect(client, userdata, flags, rc):
         client.subscribe(pingTopic)
