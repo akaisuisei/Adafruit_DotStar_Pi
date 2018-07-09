@@ -73,6 +73,46 @@ class AnimationVolume:
             self.strip.setPixelColor(y, color)
         self.strip.show()
 
+class AnimationWeather:
+    width = 8
+    height = 0
+    def __init__(self, strip):
+        dirs = glob.glob("image/weather/*/")
+        names = [(x.split('/')[-2], x) for x in dirs]
+        res = {}
+        for k in names:
+            f =  glob.glob(k[1] + "*.png")
+            imgs = [Image.open(x).convert("RGB").load() for x in f]
+            res[k[0]] = imgs
+            self.strip = strip
+        self.pixel = res
+
+    def show(self, dic):
+        def draw_number(arr, x_start, y_start, color):
+            for x in range(3):
+                for y in range(5):
+                    if arr[y][x] == 1:
+                        pos = 2 - x + x_start + (y + y_start) * Animation.width
+                        self.strip.setPixelColor(pos, color)
+        def draw_line(x, y, l, color):
+            for tmp in range(l):
+                pos = x + tmp + y * Animation.width
+                self.strip.setPixelColor(pos, color)
+        for y in range(AnimationWeather.height):
+            for x in range(AnimationWeather.width):
+                p = self.pixels[dic['weather']][0][x, y]
+                self.strip.setPixelColor(x+(y*AnimationWeather.width),
+                        Animation.gamma[p[0]],
+                        Animation.gamma[p[1]],
+                        Animation.gamma[p[2]])
+        color = 0xFFFFFF
+        draw_line(0, 7, 3, color)
+        c3 = util.number_bit[dic['temp'] / 10]
+        c4 = util.number_bit[dic['temp'] % 10]
+        draw_number(c3, 4, 9, color)
+        draw_number(c4, 0, 9, color)
+        self.strip.show()
+
 class AnimationTime():
     def __init__(self, strip):
         self.strip = strip
@@ -108,8 +148,6 @@ class AnimationTime():
         draw_number(c3, 4, 9, color)
         draw_number(c4, 0, 9, color)
         print(second)
-        print(t1)
-        print(t2)
         self.strip.show()
 
     def clear(self, color):
@@ -123,6 +161,7 @@ class SnipsMatrix:
     state_waiting = None
     state_volume = None
     state_time = None
+    state_weather = None
     timerstop = None
     timer_volume = None
     timer = None
@@ -140,6 +179,7 @@ class SnipsMatrix:
         SnipsMatrix.state_hotword = Animation('hotword', strip)
         SnipsMatrix.state_time = AnimationTime(strip)
         SnipsMatrix.state_volume = AnimationVolume(strip)
+        SnipsMatrix.state_weather = AnimationWeather(strip)
         SnipsMatrix.custom_anim = SnipsMatrix.load_custom_animation(strip)
         SnipsMatrix.queue.put("hotword")
         SnipsMatrix.queue.put("waiting")
@@ -194,12 +234,16 @@ class SnipsMatrix:
             return
         self.stop_all_timer()
         SnipsMatrix.create_timer(duration)
-    
+
     def show_volume(self, vol):
         if vol is None:
             return
         SnipsMatrix.queue.put([vol])
         SnipsMatrix.create_volume_timer(10)
+
+    def show_weather(self, tmp, weather):
+        SnipsMatrix.queue.put({"weather": weather, "temp": tmp})
+        SnipsMatrix.create_volume_timer(30)
 
     @staticmethod
     def load_custom_animation(strip):
@@ -226,6 +270,9 @@ class SnipsMatrix:
             elif isinstance(item, list):
                 SnipsMatrix.state_volume.show(item[0])
                 item =""
+            elif isinstance(item, dict):
+                SnipsMatrix.state_weather.show(item)
+                item =""
             elif (item == "hotword"):
                 SnipsMatrix.state_hotword.show()
             elif (item == "waiting"):
@@ -233,7 +280,7 @@ class SnipsMatrix:
                 item =""
             elif (item in SnipsMatrix.custom_anim):
                 SnipsMatrix.custom_anim[item].show()
-    
+
     @staticmethod
     def create_timer(duration):
         SnipsMatrix.create_stop_timer(duration + 1)
@@ -301,7 +348,7 @@ class SnipsMatrix:
     def stop_animation():
         SnipsMatrix.stop_all_timer()
         SnipsMatrix.queue.put("waiting")
-    
+
     @staticmethod
     def stop_show_volume():
         if SnipsMatrix.timer_volume:

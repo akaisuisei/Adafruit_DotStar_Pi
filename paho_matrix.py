@@ -34,6 +34,7 @@ m_topic = 'concierge/feedback/led'
 show_hour = '{}/{}/time'.format(m_topic, site_id)
 show_animation = '{}/{}/animation'.format(m_topic, site_id)
 show_timer = '{}/{}/timer'.format(m_topic, site_id)
+show_weather = '{}/{}/weather'.format(m_topic, site_id)
 stop_display = '{}/{}/stop'.format(m_topic, site_id)
 add_image = '{}/{}/add/#'.format(m_topic, site_id)
 show_volume = 'concierge/commands/volume'
@@ -92,6 +93,11 @@ def display_volume(client, userdata, msg):
     print(msg.topic)
     skill.show_volume(int(msg.payload))
 
+def display_weather(client, userdata, msg):
+    print(msg.topic)
+    tmp = json.loads(msg.payload)
+    skill.show_weather(tmp['temp'], tmp['weather'])
+
 def on_connect(client, userdata, flags, rc):
         print('connected')
         client.subscribe(pingTopic)
@@ -117,4 +123,5 @@ if __name__ == "__main__":
     client.message_callback_add(stop_display, display_stop)
     client.message_callback_add(add_image, save_image)
     client.message_callback_add(show_volume, display_volume)
+    client.message_callback_add(show_weather, display_weather)
     client.loop_forever()
