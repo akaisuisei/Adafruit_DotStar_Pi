@@ -75,7 +75,7 @@ class AnimationVolume:
 
 class AnimationWeather:
     width = 8
-    height = 0
+    height = 8
     def __init__(self, strip):
         dirs = glob.glob("image/weather/*/")
         names = [(x.split('/')[-2], x) for x in dirs]
@@ -85,7 +85,7 @@ class AnimationWeather:
             imgs = [Image.open(x).convert("RGB").load() for x in f]
             res[k[0]] = imgs
             self.strip = strip
-        self.pixel = res
+        self.pixels = res
 
     def show(self, dic):
         def draw_number(arr, x_start, y_start, color):
@@ -98,6 +98,8 @@ class AnimationWeather:
             for tmp in range(l):
                 pos = x + tmp + y * Animation.width
                 self.strip.setPixelColor(pos, color)
+        if dic['weather'] not in self.pixels:
+            return
         for y in range(AnimationWeather.height):
             for x in range(AnimationWeather.width):
                 p = self.pixels[dic['weather']][0][x, y]
@@ -106,7 +108,6 @@ class AnimationWeather:
                         Animation.gamma[p[1]],
                         Animation.gamma[p[2]])
         color = 0xFFFFFF
-        draw_line(0, 7, 3, color)
         c3 = util.number_bit[dic['temp'] / 10]
         c4 = util.number_bit[dic['temp'] % 10]
         draw_number(c3, 4, 9, color)
