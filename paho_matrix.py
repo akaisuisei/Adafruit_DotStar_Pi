@@ -36,7 +36,9 @@ show_animation = '{}/{}/animation'.format(m_topic, site_id)
 show_timer = '{}/{}/timer'.format(m_topic, site_id)
 stop_display = '{}/{}/stop'.format(m_topic, site_id)
 add_image = '{}/{}/add/#'.format(m_topic, site_id)
+show_volume = 'concierge/commands/volume'
 skill = SnipsMatrix()
+
 def dialogue_open(client, userdata, msg):
     print(msg.topic)
     skill.hotword_detected()
@@ -86,6 +88,10 @@ def display_timer(client, userdata, msg):
         duration = data['duration']
     skill.show_timer(duration)
 
+def display_volume(client, userdata, msg):
+    print(msg.topic)
+    skill.show_volume(int(msg.payload))
+
 def on_connect(client, userdata, flags, rc):
         print('connected')
         client.subscribe(pingTopic)
@@ -110,4 +116,5 @@ if __name__ == "__main__":
     client.message_callback_add(show_animation, display_animation)
     client.message_callback_add(stop_display, display_stop)
     client.message_callback_add(add_image, save_image)
+    client.message_callback_add(show_volume, display_volume)
     client.loop_forever()

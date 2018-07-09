@@ -47,6 +47,32 @@ class Animation:
             self.strip.setPixelColor(y, color)
         self.strip.show()
 
+class AnimationVolume:
+    def __init__(self, strip):
+        self.strip = strip
+        vol = 0;
+
+    def show(self, new_vol):
+        def draw_rect(x_start, y_start, w, h, color):
+            for x in range(w):
+                for y in range(h):
+                    pos = 7 - x + x_start + (y + y_start) * Animation.width
+                    print(pos)
+                    self.strip.setPixelColor(pos, color)
+        if (new_vol >= 16):
+            return
+        self.clear(0)
+        if (new_vol <= 0):
+            return
+        self.vol = new_vol
+        draw_rect(5, 15 - self.vol, 2, self.vol, 0xFFFFFF)
+        self.strip.show()
+
+    def clear(self, color):
+        for y in range(128):
+            self.strip.setPixelColor(y, color)
+        self.strip.show()
+
 class AnimationTime():
     def __init__(self, strip):
         self.strip = strip
@@ -76,11 +102,11 @@ class AnimationTime():
         c3 = util.number_bit[t2 / 10]
         c4 = util.number_bit[t2 % 10]
         color = 0xFFFFFF
-        draw_number(c1, 5, 1, color)
-        draw_number(c2, 1, 1, color)
-        draw_line(3, 7, 3, color)
-        draw_number(c3, 5, 9, color)
-        draw_number(c4, 1, 9, color)
+        draw_number(c1, 4, 1, color)
+        draw_number(c2, 0, 1, color)
+        draw_line(0, 7, 3, color)
+        draw_number(c3, 4, 9, color)
+        draw_number(c4, 0, 9, color)
         print(second)
         print(t1)
         print(t2)
@@ -95,8 +121,10 @@ class SnipsMatrix:
     queue = Queue.Queue()
     state_hotword = None
     state_waiting = None
+    state_volume = None
     state_time = None
     timerstop = None
+    timer_volume = None
     timer = None
     custom_anim = None
 
@@ -105,12 +133,13 @@ class SnipsMatrix:
         numpixels = 128
         datapin   = 10
         clockpin  = 11
-        strip = Adafruit_DotStar(numpixels, datapin, clockpin, 2000000)
+        strip = Adafruit_DotStar(numpixels, datapin, clockpin, 1000000)
         strip.begin()
         strip.setBrightness(64)
         self.strip = strip
         SnipsMatrix.state_hotword = Animation('hotword', strip)
         SnipsMatrix.state_time = AnimationTime(strip)
+        SnipsMatrix.state_volume = AnimationVolume(strip)
         SnipsMatrix.custom_anim = SnipsMatrix.load_custom_animation(strip)
         SnipsMatrix.queue.put("hotword")
         SnipsMatrix.queue.put("waiting")
@@ -165,6 +194,12 @@ class SnipsMatrix:
             return
         self.stop_all_timer()
         SnipsMatrix.create_timer(duration)
+    
+    def show_volume(self, vol):
+        if vol is None:
+            return
+        SnipsMatrix.queue.put([vol])
+        SnipsMatrix.create_volume_timer(10)
 
     @staticmethod
     def load_custom_animation(strip):
@@ -183,8 +218,13 @@ class SnipsMatrix:
             if (not SnipsMatrix.queue.empty()):
                 item = SnipsMatrix.queue.get_nowait()
                 SnipsMatrix.queue.task_done()
+                print(item)
             if isinstance(item, (int, long, float)):
-                SnipsMatrix.state_time.show(item)
+                if SnipsMatrix.timer_volume is None:
+                    SnipsMatrix.state_time.show(item)
+                item =""
+            elif isinstance(item, list):
+                SnipsMatrix.state_volume.show(item[0])
                 item =""
             elif (item == "hotword"):
                 SnipsMatrix.state_hotword.show()
@@ -193,6 +233,7 @@ class SnipsMatrix:
                 item =""
             elif (item in SnipsMatrix.custom_anim):
                 SnipsMatrix.custom_anim[item].show()
+    
     @staticmethod
     def create_timer(duration):
         SnipsMatrix.create_stop_timer(duration + 1)
@@ -210,6 +251,7 @@ class SnipsMatrix:
                                             SnipsMatrix.worker_timer,
                                            args=[duration])
         SnipsMatrix.timer.start()
+
     @staticmethod
     def create_timer_time(duration):
         SnipsMatrix.create_stop_timer(duration)
@@ -231,6 +273,16 @@ class SnipsMatrix:
         SnipsMatrix.timerstop.start()
 
     @staticmethod
+    def create_volume_timer(duration):
+        if SnipsMatrix.timer_volume:
+            SnipsMatrix.timer_volume.cancel()
+            del SnipsMatrix.timer_volume
+            SnipsMatrix.timer_volume = None
+        SnipsMatrix.timer_volume = threading.Timer(duration,
+                SnipsMatrix.stop_show_volume)
+        SnipsMatrix.timer_volume.start()
+
+    @staticmethod
     def stop_all_timer():
         if SnipsMatrix.timerstop:
             SnipsMatrix.timerstop.cancel()
@@ -240,8 +292,20 @@ class SnipsMatrix:
             SnipsMatrix.timer.cancel()
             del SnipsMatrix.timer
             SnipsMatrix.timer = None
+        if SnipsMatrix.timer_volume:
+            SnipsMatrix.timer_volume.cancel()
+            del SnipsMatrix.timer_volume
+            SnipsMatrix.timer_volume = None
 
     @staticmethod
     def stop_animation():
         SnipsMatrix.stop_all_timer()
+        SnipsMatrix.queue.put("waiting")
+    
+    @staticmethod
+    def stop_show_volume():
+        if SnipsMatrix.timer_volume:
+            SnipsMatrix.timer_volume.cancel()
+            del SnipsMatrix.timer_volume
+        SnipsMatrix.timer_volume = None
         SnipsMatrix.queue.put("waiting")
