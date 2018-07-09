@@ -42,7 +42,7 @@ class Animation:
         self.item %= self.num_image
         time.sleep(0.1)
 
-    def clear(self,color):
+    def clear(self, color):
         for y in range(128):
             self.strip.setPixelColor(y, color)
         self.strip.show()
@@ -58,13 +58,11 @@ class AnimationTime():
                     if c1[y][x] == 1:
                         pos = x + x_start + (y + y_start) * Animation.width
                         self.strip.setPixelColor(pos, color)
-
         def draw_line(x, y, l, color):
             for tmp in range(l):
                 pos = x + tmp + y * Animation.width
                 self.strip.setPixelColor(pos, color)
         self.clear(0)
-        print( "show number")
         second = int(second)
         second %= (60 * 60 * 24)
         if second > 60 * 60:
@@ -84,7 +82,8 @@ class AnimationTime():
         draw_number(c3, 1, 9, color)
         draw_number(c4, 5, 9, color)
         self.strip.show()
-    def clear(self,color):
+
+    def clear(self, color):
         for y in range(128):
             self.strip.setPixelColor(y, color)
         self.strip.show()
@@ -96,6 +95,8 @@ class SnipsMatrix:
     state_time = None
     timerstop = None
     timer = None
+    custom_anim = None
+
 
     def __init__(self):
         numpixels = 128
@@ -104,8 +105,10 @@ class SnipsMatrix:
         strip = Adafruit_DotStar(numpixels, datapin, clockpin, 2000000)
         strip.begin()
         strip.setBrightness(64)
+        self.strip = strip
         SnipsMatrix.state_hotword = Animation('hotword', strip)
         SnipsMatrix.state_time = AnimationTime(strip)
+        SnipsMatrix.custom_anim = SnipsMatrix.load_custom_animation(strip)
         SnipsMatrix.queue.put("hotword")
         SnipsMatrix.queue.put("waiting")
         t = threading.Thread(target=SnipsMatrix.worker, args=())
@@ -121,18 +124,26 @@ class SnipsMatrix:
         SnipsMatrix.queue.put("waiting")
 
     def save_image(self, name, directory, image):
+        already_exist = True
+        if (image is None):
+            return
         if not os.path.exists(CONFIG_INI_DIR):
                 os.makedirs(CONFIG_INI_DIR)
         if not os.path.exists(CONFIG_INI_DIR + directory):
                 os.makedirs(CONFIG_INI_DIR + directory)
+                already_exist = False
         f_name = "{}{}/{}".format(CONFIG_INI_DIR, directory, name)
-        if (image is None):
-            return
         try:
             with open(f_name, 'w') as f:
                 f.write(image)
         except IOError as e:
             print(e)
+            return
+        if already_exist:
+            del SnipsMatrix.custom_anim[directory]
+        SnipsMatrix.custom_anim[directory] = Animation(CONFIG_INI_DIR +
+                                                       directory,
+                                                       self.strip)
 
     def show_time(self, duration):
         if duration is None:
@@ -145,11 +156,21 @@ class SnipsMatrix:
         self.stop_all_timer()
         if duration is not None:
             SnipsMatrix.create_stop_timer(duration)
+
     def show_timer(self, duration):
         if duration is None:
             return
         self.stop_all_timer()
         SnipsMatrix.create_timer(duration)
+
+    @staticmethod
+    def load_custom_animation(strip):
+        dirs = glob.glob("{}*/".format(CONFIG_INI_DIR))
+        names = [(x.split('/')[-2], x) for x in dirs]
+        res = {}
+        for k in names:
+            res[k[0]] = Animation(k[1], strip)
+        return res
 
     @staticmethod
     def worker():
@@ -159,7 +180,6 @@ class SnipsMatrix:
             if (not SnipsMatrix.queue.empty()):
                 item = SnipsMatrix.queue.get_nowait()
                 SnipsMatrix.queue.task_done()
-                print(item)
             if isinstance(item, (int, long, float)):
                 SnipsMatrix.state_time.show(item)
                 item =""
@@ -168,7 +188,8 @@ class SnipsMatrix:
             elif (item == "waiting"):
                 SnipsMatrix.state_hotword.clear(0x000000)
                 item =""
-
+            elif (item in SnipsMatrix.custom_anim):
+                SnipsMatrix.custom_anim[item].show()
     @staticmethod
     def create_timer(duration):
         SnipsMatrix.create_stop_timer(duration + 1)

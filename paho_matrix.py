@@ -9,13 +9,14 @@ import threading
 from datetime import datetime
 import paho.mqtt.client as mqtt
 from snipsmatrix import SnipsMatrix
-import json
+import socket
 
 CONFIGURATION_ENCODING_FORMAT = "utf-8"
 CONFIG_INI = "config.ini"
 
 MQTT_IP_ADDR = "ledtest.local"
-MQTT_IP_ADDR = "localhost"
+if socket.gethostname() == "raspi-mika":
+    MQTT_IP_ADDR = "localhost"
 MQTT_PORT = 1883
 MQTT_ADDR = "{}:{}".format(MQTT_IP_ADDR, str(MQTT_PORT))
 
@@ -68,7 +69,6 @@ def display_time(client, userdata, msg):
 
 def display_animation(client, userdata, msg):
     print(msg.topic)
-
     data = json.loads(msg.payload)
     if ('animation' not in data):
         return
