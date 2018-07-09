@@ -55,8 +55,8 @@ class AnimationTime():
         def draw_number(arr, x_start, y_start, color):
             for x in range(3):
                 for y in range(5):
-                    if c1[y][x] == 1:
-                        pos = x + x_start + (y + y_start) * Animation.width
+                    if arr[y][x] == 1:
+                        pos = 2 - x + x_start + (y + y_start) * Animation.width
                         self.strip.setPixelColor(pos, color)
         def draw_line(x, y, l, color):
             for tmp in range(l):
@@ -76,11 +76,14 @@ class AnimationTime():
         c3 = util.number_bit[t2 / 10]
         c4 = util.number_bit[t2 % 10]
         color = 0xFFFFFF
-        draw_number(c1, 1, 1, color)
-        draw_number(c2, 5, 1, color)
+        draw_number(c1, 5, 1, color)
+        draw_number(c2, 1, 1, color)
         draw_line(3, 7, 3, color)
-        draw_number(c3, 1, 9, color)
-        draw_number(c4, 5, 9, color)
+        draw_number(c3, 5, 9, color)
+        draw_number(c4, 1, 9, color)
+        print(second)
+        print(t1)
+        print(t2)
         self.strip.show()
 
     def clear(self, color):
@@ -232,9 +235,11 @@ class SnipsMatrix:
         if SnipsMatrix.timerstop:
             SnipsMatrix.timerstop.cancel()
             del SnipsMatrix.timerstop
+            SnipsMatrix.timerstop = None
         if SnipsMatrix.timer:
             SnipsMatrix.timer.cancel()
             del SnipsMatrix.timer
+            SnipsMatrix.timer = None
 
     @staticmethod
     def stop_animation():
