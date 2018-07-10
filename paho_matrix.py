@@ -17,10 +17,9 @@ CONFIG_INI = "config.ini"
 MQTT_IP_ADDR = "ledtest.local"
 if socket.gethostname() == "raspi-mika":
     MQTT_IP_ADDR = "localhost"
-MQTT_IP_ADDR = "localhost"
 MQTT_PORT = 1883
 MQTT_ADDR = "{}:{}".format(MQTT_IP_ADDR, str(MQTT_PORT))
-
+print(MQTT_IP_ADDR)
 DIR = os.path.dirname(os.path.realpath(__file__)) + '/alarm/'
 
 alive = 0;
@@ -114,6 +113,8 @@ def display_weather(client, userdata, msg):
         tmp = json.loads(msg.payload)
     except:
         print('weather not a json')
+        return
+    if ('temp' not in tmp or 'weather' not in tmp):
         return
     skill.show_weather(tmp['temp'], tmp['weather'])
 

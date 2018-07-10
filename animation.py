@@ -18,7 +18,8 @@ class Animation:
 
     def prepare(self, x, y, color):
         pos = x + y * Animation.width
-        Animation._next[pos] = color
+        if (pos < len(Animation._next) and pos >= 0):
+            Animation._next[pos] = color
 
     def write(self):
         Animation.s_write(self.strip)
@@ -29,6 +30,10 @@ class Animation:
 
     def clear(self, color):
         Animation.s_clear(color)
+    def clear_canvas(self, color, x, y, w, h):
+        for i in range(x, x + w):
+            for j in range(y, y + h):
+                self.prepare(i, j, color)
 
     def reset(self, color):
         Animation.s_reset(self.strip, color)
@@ -51,14 +56,17 @@ class Animation:
         arr = util.number_bit[num]
         for x in range(3):
             for y in range(5):
+                c = 0
                 if arr[y][x] == 1:
-                    self.prepare(2 -x + x_start, y + y_start, color)
+                    c = color
+                self.prepare(2 - x + x_start, y + y_start, c)
 
     @staticmethod
     def s_write(strip):
         for i in range(len(Animation._next)):
-            if Animation._next[i] != Animation._current:
+            if Animation._next[i] != Animation._current[i]:
                 strip.setPixelColor(i, Animation._next[i])
+                Animation._current[i] = Animation._next[i]
         strip.show()
 
     @staticmethod
@@ -72,11 +80,13 @@ class Animation:
 
     @staticmethod
     def rgb_to_hex(r, g, b):
-        return b + (g<< 8) + (r << 16)
+        return b + (g << 8) + (r << 16)
 
     @staticmethod
     def pix_to_hex(p):
-        return Animation.rgb_to_hex(*p)
+        return Animation.rgb_to_hex(Animation.gamma[p[0]],
+                                    Animation.gamma[p[1]],
+                                    Animation.gamma[p[2]])
 
 class AnimationImage(Animation):
     def __init__(self, images, strip, custom = False):
@@ -96,7 +106,7 @@ class AnimationImage(Animation):
             for x in range(Animation.width):
                 p = self.pixels[self.item][x, y]
                 self.prepare(x, y, Animation.pix_to_hex(p))
-            self.write()
+        self.write()
         self.item += 1
         self.item %= self.num_image
         time.sleep(0.1)
@@ -113,6 +123,7 @@ class AnimationVolume(Animation):
         if (new_vol <= 0):
             self.reset(0)
             return
+        self.clear(0)
         self.vol = new_vol
         self.draw_rect(5, 15 - self.vol, 2, self.vol, 0xFFFFFF)
         self.write()
@@ -156,6 +167,7 @@ class AnimationTime(Animation):
             t1 = second / 60
             t2 = second % 60
         color = 0xFFFFFF
+        self.clear(0)
         self.draw_number(t1 / 10, 4, 1, color)
         self.draw_number(t1 % 10, 0, 1, color)
         self.draw_hline(0, 7, 3, color)
