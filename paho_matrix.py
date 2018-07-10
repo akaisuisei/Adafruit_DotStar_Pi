@@ -119,9 +119,11 @@ def display_weather(client, userdata, msg):
     skill.show_weather(tmp['temp'], tmp['weather'])
 
 def on_connect(client, userdata, flags, rc):
-        print('connected')
-        client.subscribe(pingTopic)
-        client.subscribe("{}/#".format('concierge'))
+    print('connected')
+    client.subscribe(pingTopic)
+    client.subscribe(dial_open)
+    client.subscribe(dial_close)
+    client.subscribe("{}/#".format('concierge'))
 
 def on_message(client, userdata, msg):
     client.publish('concierge/apps/live/pong', '{"result":"{}"}'.format(skill_name))
