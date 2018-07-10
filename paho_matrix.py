@@ -17,6 +17,7 @@ CONFIG_INI = "config.ini"
 MQTT_IP_ADDR = "ledtest.local"
 if socket.gethostname() == "raspi-mika":
     MQTT_IP_ADDR = "localhost"
+MQTT_IP_ADDR = "localhost"
 MQTT_PORT = 1883
 MQTT_ADDR = "{}:{}".format(MQTT_IP_ADDR, str(MQTT_PORT))
 
@@ -64,7 +65,11 @@ def save_image(client, userdata, msg):
 
 def display_time(client, userdata, msg):
     print('time')
-    data = json.loads(msg.payload)
+    try:
+        data = json.loads(msg.payload)
+    except:
+        print('time not a json')
+        return
     duration = None
     if ('duration' in data):
         duration = data['duration']
@@ -72,7 +77,11 @@ def display_time(client, userdata, msg):
 
 def display_animation(client, userdata, msg):
     print(msg.topic)
-    data = json.loads(msg.payload)
+    try:
+        data = json.loads(msg.payload)
+    except:
+        print('animation not a json')
+        return
     if ('animation' not in data):
         return
     animation = data['animation']
@@ -83,8 +92,14 @@ def display_animation(client, userdata, msg):
 
 def display_timer(client, userdata, msg):
     print(msg.topic)
-    data = json.loads(msg.payload)
+    try:
+        data = json.loads(msg.payload)
+    except:
+        print('timer not a json')
+        return
     duration = None
+    if (not isinstance(data, dict)):
+        return
     if ('duration' in data):
         duration = data['duration']
     skill.show_timer(duration)
@@ -95,7 +110,11 @@ def display_volume(client, userdata, msg):
 
 def display_weather(client, userdata, msg):
     print(msg.topic)
-    tmp = json.loads(msg.payload)
+    try:
+        tmp = json.loads(msg.payload)
+    except:
+        print('weather not a json')
+        return
     skill.show_weather(tmp['temp'], tmp['weather'])
 
 def on_connect(client, userdata, flags, rc):
