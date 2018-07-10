@@ -44,7 +44,6 @@ class SnipsMatrix:
         t.start()
 
     def hotword_detected(self):
-        self.stop_all_timer()
         SnipsMatrix.queue.put("hotword")
 
     def stop(self):
