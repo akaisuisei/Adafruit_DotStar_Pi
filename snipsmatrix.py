@@ -9,6 +9,7 @@ import time
 import os
 from animation import AnimationTime, AnimationImage, AnimationWeather
 from animation import AnimationVolume
+import snipsMatrixAction
 
 TIMER = 30
 CONFIG_INI_DIR =  expanduser("~/.matrix/")
@@ -71,29 +72,29 @@ class SnipsMatrix:
         SnipsMatrix.state_volume = AnimationVolume(strip, 0)
         SnipsMatrix.state_weather = AnimationWeather(strip)
         SnipsMatrix.custom_anim = SnipsMatrix.load_custom_animation(strip)
-        SnipsMatrix.queue.put("hotword")
-        SnipsMatrix.queue.put("waiting")
+        SnipsMatrix.queue.put(snipsMatrixAction.Hotword())
+        SnipsMatrix.queue.put(snipsMatrixAction.Clear(DisplayPriority.hardware))
         t = threading.Thread(target=SnipsMatrix.worker, args=())
         t.start()
 
     def hotword_detected(self):
         SnipsMatrix.hotword_status = True
-        SnipsMatrix.queue.put("hotword")
+        SnipsMatrix.queue.put(snipsMatrixAction.Hotword())
 
     def stop(self):
         print('stop all animation')
         self.stop_all_timer()
-        SnipsMatrix.queue.put("waiting")
+        SnipsMatrix.queue.put(snipsMatrixAction.Clear(DisplayPriority.hardware))
 
     def exit(self):
         print('exit snipsmatrix')
         self.stop_all_timer()
-        SnipsMatrix.queue.put("__exit__")
+        SnipsMatrix.queue.put(snipsMatrixAction.Exit())
 
     def stop_hotword(self):
         print('stop hotword')
         SnipsMatrix.hotword_status =  False
-        SnipsMatrix.queue.put("waiting")
+        SnipsMatrix.queue.put(snipsMatrixAction.Clear(DisplayPriority.hotword))
 
     def save_image(self, name, directory, image):
         already_exist = True
@@ -125,6 +126,7 @@ class SnipsMatrix:
 
     def show_animation(self, name, duration):
         SnipsMatrix.queue.put(name)
+        SnipsMatrix.queue.put(snipsMatrixAction.CustomAnimation(name))
         if duration is not None:
             SnipsMatrix.create_short_app_timer(duration)
 
@@ -136,11 +138,11 @@ class SnipsMatrix:
     def show_volume(self, vol):
         if vol is None:
             return
-        SnipsMatrix.queue.put([vol])
+        SnipsMatrix.queue.put(snipsMatrixAction.Volume(vol))
         SnipsMatrix.create_hardware_timer(10)
 
     def show_weather(self, tmp, weather):
-        SnipsMatrix.queue.put({"weather": weather, "temp": tmp})
+        SnipsMatrix.queue.put(snipsMatrixAction.Weather(weather, tmp))
         SnipsMatrix.create_short_app_timer(20)
 
     @staticmethod
@@ -161,33 +163,39 @@ class SnipsMatrix:
                 item = SnipsMatrix.queue.get_nowait()
                 SnipsMatrix.queue.task_done()
                 print(item)
-            if isinstance(item, (int, long)):
+            if isinstance(item, snipsMatrixAction.Timer):
                 if DisplayPriority.can_I_do_it(DisplayPriority.schedule_apps):
                     SnipsMatrix.state_time.show(item)
                 item =""
-            if isinstance(item, (float)):
+            if isinstance(item, snipsMatrixAction.Time):
                 if DisplayPriority.can_I_do_it(DisplayPriority.short_apps):
                     SnipsMatrix.state_time.show(item)
                 item =""
-            elif isinstance(item, list):
+            elif isinstance(item, snipsMatrixAction.Volume):
                 if DisplayPriority.can_I_do_it(DisplayPriority.hardware):
-                    SnipsMatrix.state_volume.show(item[0])
+                    SnipsMatrix.state_volume.show(item)
                     item =""
-            elif isinstance(item, dict):
+            elif isinstance(item, snipsMatrixAction.Weather):
                 if DisplayPriority.can_I_do_it(DisplayPriority.short_apps):
                     SnipsMatrix.state_weather.show(item)
                     item =""
-            elif (item == "hotword"):
+            elif isinstance(item, snipsMatrixAction.Hotword):
                 if DisplayPriority.can_I_do_it(DisplayPriority.hotword):
                     SnipsMatrix.state_hotword.show()
-            elif (item == "waiting"):
-                SnipsMatrix.state_hotword.reset(0)
-                item =""
-            elif (item == "__exit__"):
+            elif isinstance(item, snipsMatrixAction.Clear):
+                if DisplayPriority.can_I_do_it(item.value):
+                    SnipsMatrix.state_hotword.reset(0)
+                    item =""
+            elif isinstance(item, snipsMatrixAction.Exit):
                 return
-            elif (item in SnipsMatrix.custom_anim):
+            elif isinstance(item, snipsMatrixAction.CustomAnimation):
                 if DisplayPriority.can_I_do_it(DisplayPriority.short_apps):
-                    SnipsMatrix.custom_anim[item].show()
+                    SnipsMatrix.showCustomAnimation(item)
+
+    @staticmethod
+    def showCustomAnimation(item):
+        if (item in SnipsMatrix.custom_anim):
+            SnipsMatrix.custom_anim[item].show()
 
     @staticmethod
     def create_timer(duration, stop_time = None):
@@ -199,11 +207,12 @@ class SnipsMatrix:
             del SnipsMatrix.timer
             SnipsMatrix.timer = None
         if duration >= 0 :
-            SnipsMatrix.queue.put(int(duration))
+            SnipsMatrix.queue.put(snipsMatrixAction.Timer(duration))
         elif duration >= -2:
-            SnipsMatrix.queue.put(int(0))
+            SnipsMatrix.queue.put(snipsMatrixAction.Timer(0))
         else:
-            SnipsMatrix.queue.put("waiting")
+            SnipsMatrix.queue.put(
+                snipsMatrixAction.Clear(DisplayPriority.schedule_apps))
             return
         SnipsMatrix.timer = threading.Timer(1,
                                             SnipsMatrix.create_timer,
@@ -232,13 +241,14 @@ class SnipsMatrix:
 
     @staticmethod
     def create_timer_time(duration):
-        SnipsMatrix.queue.put(time.time())
+        SnipsMatrix.queue.put(snipsMatrixAction.Time(time.time()))
         if SnipsMatrix.timer_short_app:
             SnipsMatrix.timer_short_app.cancel()
             del SnipsMatrix.timer_short_app
             SnipsMatrix.timer_short_app = None
         if duration < 0:
-            SnipsMatrix.queue.put("waiting")
+            SnipsMatrix.queue.put(
+                snipsMatrixAction.Clear(DisplayPriority.short_apps))
             return
         SnipsMatrix.timer_short_app = threading.Timer(1,
                                             SnipsMatrix.create_timer_time,
@@ -270,7 +280,7 @@ class SnipsMatrix:
             SnipsMatrix.timer_hardware.cancel()
             del SnipsMatrix.timer_hardware
         SnipsMatrix.timer_hardware = None
-        SnipsMatrix.queue.put("waiting")
+        SnipsMatrix.queue.put(snipsMatrixAction.Clear(DisplayPriority.hardware))
 
     @staticmethod
     def stop_show_short_app():
@@ -278,4 +288,5 @@ class SnipsMatrix:
             SnipsMatrix.timer_short_app.cancel()
             del SnipsMatrix.timer_short_app
         SnipsMatrix.timer_short_app = None
-        SnipsMatrix.queue.put("waiting")
+        SnipsMatrix.queue.put(
+            snipsMatrixAction.Clear(DisplayPriority.short_apps))

@@ -118,13 +118,13 @@ class AnimationVolume(Animation):
         self.vol = vol
 
     def show(self, new_vol):
-        if (new_vol >= 16):
+        if (new_vol.value >= 16):
             return
-        if (new_vol <= 0):
+        if (new_vol.value <= 0):
             self.reset(0)
             return
         self.clear(0)
-        self.vol = new_vol
+        self.vol = new_vol.value
         self.draw_rect(5, 15 - self.vol, 2, self.vol, 0xFFFFFF)
         self.write()
 
@@ -144,15 +144,15 @@ class AnimationWeather(Animation):
         self.pixels = res
 
     def show(self, dic):
-        if dic['weather'] not in self.pixels:
+        if dic.condition not in self.pixels:
             return
         for y in range(AnimationWeather.height):
             for x in range(AnimationWeather.width):
-                p = self.pixels[dic['weather']][0][x, y]
+                p = self.pixels[dic.condition][0][x, y]
                 self.prepare(x, y, Animation.pix_to_hex(p))
         color = 0xFFFFFF
-        self.draw_number(dic['temp'] / 10, 4, 9, color)
-        self.draw_number(dic['temp'] % 10, 0, 9, color)
+        self.draw_number(dic.temperature / 10, 4, 9, color)
+        self.draw_number(dic.temperature % 10, 0, 9, color)
         self.write()
 
 class AnimationTime(Animation):
