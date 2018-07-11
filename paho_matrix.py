@@ -137,7 +137,6 @@ def sig_handler(sig, frame):
     skill.exit()
     sys.exit(0)
 
-
 if __name__ == "__main__":
     client = mqtt.Client()
     client.on_connect = on_connect
