@@ -51,11 +51,16 @@ class SnipsMatrix:
         self.stop_all_timer()
         SnipsMatrix.queue.put("waiting")
 
+    def exit(self):
+        print('exit snipsmatrix')
+        self.stop_all_timer()
+        SnipsMatrix.queue.put("__exit__")
+
     def stop_hotword(self):
         print('stop')
         #add priority
         SnipsMatrix.queue.put("waiting")
-    
+
     def save_image(self, name, directory, image):
         already_exist = True
         if (image is None):
@@ -140,6 +145,8 @@ class SnipsMatrix:
             elif (item == "waiting"):
                 SnipsMatrix.state_hotword.reset(0)
                 item =""
+            elif (item == "__exit__"):
+                return
             elif (item in SnipsMatrix.custom_anim):
                 SnipsMatrix.custom_anim[item].show()
 

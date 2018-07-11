@@ -10,6 +10,9 @@ from datetime import datetime
 import paho.mqtt.client as mqtt
 from snipsmatrix import SnipsMatrix
 import socket
+import signal
+import sys
+
 
 CONFIGURATION_ENCODING_FORMAT = "utf-8"
 CONFIG_INI = "config.ini"
@@ -129,6 +132,12 @@ def on_message(client, userdata, msg):
 def on_message_def(client, userdata, msg):
     print(msg.topic)
 
+def sig_handler(sig, frame):
+    client.disconnect()
+    skill.exit()
+    sys.exit(0)
+
+
 if __name__ == "__main__":
     client = mqtt.Client()
     client.on_connect = on_connect
@@ -144,4 +153,5 @@ if __name__ == "__main__":
     client.message_callback_add(add_image, save_image)
     client.message_callback_add(show_volume, display_volume)
     client.message_callback_add(show_weather, display_weather)
+    signal.signal(signal.SIGINT, sig_handler)
     client.loop_forever()
