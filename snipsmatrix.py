@@ -51,6 +51,11 @@ class SnipsMatrix:
         self.stop_all_timer()
         SnipsMatrix.queue.put("waiting")
 
+    def stop_hotword(self):
+        print('stop')
+        #add priority
+        SnipsMatrix.queue.put("waiting")
+    
     def save_image(self, name, directory, image):
         already_exist = True
         if (image is None):

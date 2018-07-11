@@ -14,9 +14,7 @@ import socket
 CONFIGURATION_ENCODING_FORMAT = "utf-8"
 CONFIG_INI = "config.ini"
 
-MQTT_IP_ADDR = "ledtest.local"
-if socket.gethostname() == "raspi-mika":
-    MQTT_IP_ADDR = "localhost"
+MQTT_IP_ADDR = "raspi-mika.local"
 MQTT_PORT = 1883
 MQTT_ADDR = "{}:{}".format(MQTT_IP_ADDR, str(MQTT_PORT))
 print(MQTT_IP_ADDR)
@@ -46,7 +44,7 @@ def dialogue_open(client, userdata, msg):
 
 def dialogue_close(client, userdata, msg):
     print(msg.topic)
-    skill.stop()
+    skill.stop_hotword()
 
 def display_stop(client, userdata, msg):
     print(msg.topic)
