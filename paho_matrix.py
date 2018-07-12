@@ -29,8 +29,8 @@ client = None
 site_id = "default"
 skill_name = "snips-skill-matrix"
 pingTopic = 'concierge/apps/live/ping'
-dial_open = 'hermes/dialogueManager/sessionStarted'
-dial_close = 'hermes/dialogueManager/sessionEnded'
+dial_open = 'hermes/asr/startListening'
+dial_close = 'hermes/asr/stopListening'
 m_topic = 'concierge/feedback/led'
 show_hour = '{}/{}/time'.format(m_topic, site_id)
 show_animation = '{}/{}/animation'.format(m_topic, site_id)
@@ -40,14 +40,24 @@ stop_display = '{}/{}/stop'.format(m_topic, site_id)
 add_image = '{}/{}/add/#'.format(m_topic, site_id)
 show_volume = 'concierge/commands/volume'
 skill = SnipsMatrix()
+last_session = None
 
 def dialogue_open(client, userdata, msg):
+    global last_session
     print(msg.topic)
-    skill.hotword_detected()
-
+    print(msg.payload)
+    data = json.loads(msg.payload)
+    if data['siteId'] == site_id:
+        skill.hotword_detected()
+        last_session = data['sessionId']
 def dialogue_close(client, userdata, msg):
     print(msg.topic)
-    skill.stop_hotword()
+    print(msg.payload)
+    data = json.loads(msg.payload)
+    if (data['siteId'] != site_id):
+        return
+    if last_session and data['sessionId'] and data['sessionId'] == last_session:
+        skill.stop_hotword()
 
 def display_stop(client, userdata, msg):
     print(msg.topic)
