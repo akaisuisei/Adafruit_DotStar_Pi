@@ -157,41 +157,58 @@ class SnipsMatrix:
     @staticmethod
     def worker():
         item = ""
+        oldItem = ""
+        goback =False
         while True:
             time.sleep(0.01)
             if (not SnipsMatrix.queue.empty()):
+                oldItem = item
+                goback = False
                 item = SnipsMatrix.queue.get_nowait()
                 SnipsMatrix.queue.task_done()
                 print(item)
             if isinstance(item, snipsMatrixAction.Timer):
                 if DisplayPriority.can_I_do_it(DisplayPriority.schedule_apps):
                     SnipsMatrix.state_time.show(item)
-                item =""
+                    item =""
+                else:
+                    item = oldItem
             if isinstance(item, snipsMatrixAction.Time):
                 if DisplayPriority.can_I_do_it(DisplayPriority.short_apps):
                     SnipsMatrix.state_time.show(item)
-                item =""
+                    item =""
+                else:
+                    item = oldItem
             elif isinstance(item, snipsMatrixAction.Volume):
                 if DisplayPriority.can_I_do_it(DisplayPriority.hardware):
                     SnipsMatrix.state_volume.show(item)
                     item =""
+                else:
+                    item = oldItem
             elif isinstance(item, snipsMatrixAction.Weather):
                 if DisplayPriority.can_I_do_it(DisplayPriority.short_apps):
                     SnipsMatrix.state_weather.show(item)
                     item =""
+                else:
+                    item = oldItem
             elif isinstance(item, snipsMatrixAction.Hotword):
                 if DisplayPriority.can_I_do_it(DisplayPriority.hotword):
                     SnipsMatrix.state_hotword.show()
+                else:
+                    item = oldItem
             elif isinstance(item, snipsMatrixAction.Clear):
                 if DisplayPriority.can_I_do_it(item.value):
                     SnipsMatrix.state_hotword.reset(0)
                     item =""
+                else:
+                    item = oldItem
             elif isinstance(item, snipsMatrixAction.Exit):
                 return
             elif isinstance(item, snipsMatrixAction.CustomAnimation):
                 if DisplayPriority.can_I_do_it(DisplayPriority.short_apps):
                     SnipsMatrix.showCustomAnimation(item)
-
+                else:
+                    item = oldItem
     @staticmethod
     def showCustomAnimation(item):
         if (item in SnipsMatrix.custom_anim):
