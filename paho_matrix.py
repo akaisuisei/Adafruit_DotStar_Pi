@@ -50,6 +50,7 @@ def dialogue_open(client, userdata, msg):
     if data['siteId'] == site_id:
         skill.hotword_detected()
         last_session = data['sessionId']
+
 def dialogue_close(client, userdata, msg):
     print(msg.topic)
     print(msg.payload)
