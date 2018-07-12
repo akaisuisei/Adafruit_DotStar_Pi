@@ -26,12 +26,12 @@ class DisplayPriority:
 
     @staticmethod
     def can_I_do_it(priority):
-        if priority == DisplayPriority.hardware:
-            print("prio Hardware")
-            return True
         if priority == DisplayPriority.hotword:
             print("prio hotword: {}".format(SnipsMatrix.timer_hardware is None))
-            return SnipsMatrix.timer_hardware is None
+            return True
+        if priority == DisplayPriority.hardware:
+            print("prio Hardware")
+            return (not SnipsMatrix.hotword_status)
         if priority == DisplayPriority.short_apps:
             print("prio short_app: {}".format(SnipsMatrix.timer_hardware is None
                                               and not SnipsMatrix.hotword_status))
