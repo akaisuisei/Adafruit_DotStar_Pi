@@ -159,6 +159,7 @@ class SnipsMatrix:
         item = ""
         oldItem = ""
         goback =False
+        flip = True
         while True:
             time.sleep(0.01)
             if (not SnipsMatrix.queue.empty()):
@@ -169,13 +170,13 @@ class SnipsMatrix:
                 print(item)
             if isinstance(item, snipsMatrixAction.Timer):
                 if DisplayPriority.can_I_do_it(DisplayPriority.schedule_apps):
-                    SnipsMatrix.state_time.show(item)
+                    SnipsMatrix.state_time.show(item, flip)
                     item =""
                 else:
                     item = oldItem
             if isinstance(item, snipsMatrixAction.Time):
                 if DisplayPriority.can_I_do_it(DisplayPriority.short_apps):
-                    SnipsMatrix.state_time.show(item)
+                    SnipsMatrix.state_time.show(item, flip)
                     item =""
                 else:
                     item = oldItem
@@ -187,7 +188,7 @@ class SnipsMatrix:
                     item = oldItem
             elif isinstance(item, snipsMatrixAction.Weather):
                 if DisplayPriority.can_I_do_it(DisplayPriority.short_apps):
-                    SnipsMatrix.state_weather.show(item)
+                    SnipsMatrix.state_weather.show(item, flip)
                     item =""
                 else:
                     item = oldItem
@@ -206,7 +207,7 @@ class SnipsMatrix:
                 return
             elif isinstance(item, snipsMatrixAction.CustomAnimation):
                 if DisplayPriority.can_I_do_it(DisplayPriority.short_apps):
-                    SnipsMatrix.showCustomAnimation(item)
+                    SnipsMatrix.showCustomAnimation1(item)
                 else:
                     item = oldItem
     @staticmethod

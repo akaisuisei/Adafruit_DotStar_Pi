@@ -15,14 +15,17 @@ class Animation:
 
     def __init__(self, strip):
         self.strip = strip
+    @staticmethod
+    def getPos(x, y):
+        return (Animation.width - x - 1) + y * Animation.width
 
     def prepare(self, x, y, color):
-        pos = (Animation.width - x - 1) + y * Animation.width
+        pos = Animation.getPos(x, y)
         if (pos < len(Animation._next) and pos >= 0):
             Animation._next[pos] = color
 
-    def write(self):
-        Animation.s_write(self.strip)
+    def write(self,flip = False):
+        Animation.s_write(self.strip, flip)
 
     def show(self):
         print('not implemented')
@@ -64,9 +67,21 @@ class Animation:
                 if arr[y][x] == 1:
                     c = color
                 self.prepare(x + x_start, y + y_start, c)
+    @staticmethod
+    def flip():
+        rotate = [0] * Animation.width * Animation.height
+        for x in range (8):
+            for y in range (8):
+                rotate[8*8 +Animation.getPos(y, 7 - x)] = Animation._next[Animation.getPos(x, y)]
+        for x in range (8):
+            for y in range (8):
+                rotate[Animation.getPos(y, 7 - x)] = Animation._next[8*8 +Animation.getPos(x, y)]
+        return rotate
 
     @staticmethod
-    def s_write(strip):
+    def s_write(strip, flip = False):
+        if(flip):
+            Animation._next = Animation.flip()
         for i in range(len(Animation._next)):
             if Animation._next[i] != Animation._current[i]:
                 strip.setPixelColor(i, Animation._next[i])
@@ -147,7 +162,7 @@ class AnimationWeather(Animation):
             res[k[0]] = imgs
         self.pixels = res
 
-    def show(self, dic):
+    def show(self, dic, flip = False):
         if dic.condition not in self.pixels:
             return
         self.draw_image(0, 0, AnimationWeather.width, AnimationWeather.height,
@@ -155,11 +170,11 @@ class AnimationWeather(Animation):
         color = 0xFFFFFF
         self.draw_number(dic.temperature % 10, 5, 9, color)
         self.draw_number(dic.temperature / 10, 1, 9, color)
-        self.write()
+        self.write(flip)
 
 class AnimationTime(Animation):
 
-    def show(self, second):
+    def show(self, second, flip = False):
         second = int(second)
         second %= (60 * 60 * 24)
         if second > 60 * 60:
@@ -175,4 +190,4 @@ class AnimationTime(Animation):
         self.draw_hline(5, 7, 3, color)
         self.draw_number(t2 % 10, 5, 9, color)
         self.draw_number(t2 / 10, 1, 9, color)
-        self.write()
+        self.write(flip)
