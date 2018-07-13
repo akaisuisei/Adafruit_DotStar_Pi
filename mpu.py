@@ -17,9 +17,11 @@ class Mpu:
         self.sensor.set_value_at_address(0x15,0x69)
         self.sensor.set_value_at_address(0x40,0x38)
         self.event = events.Events()
+        self.max_counter = 51
 
-    def add_callback(self, func):
+    def add_callback(self, func, max_counter = 51):
         self.event.on_change += func
+        self.max_counter = max_counter
 
     def start(self):
         Mpu.run = True
@@ -31,11 +33,12 @@ class Mpu:
 
     def worker(self):
         counter = 0
-        max_counter = 51
         while(Mpu.run):
             sensorStatus = self.sensor.read_int()
+            accel = self.sensor.get_accel_data()
+            gyro = self.sensor.get_accel_data()
             if sensorStatus == 65:
-                if counter >= max_counter:
+                if counter >= self.max_counter:
                     self.event.on_change()
                 counter = -1
             counter += 1

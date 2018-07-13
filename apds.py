@@ -32,10 +32,36 @@ class Apds():
         self.apds = APDS9960(bus)
         self.apds.setProximityIntLowThreshold(50)
         self.apds.enableGestureSensor()
-        self.event_dir = Events()
+        self.event_dir = Events(('on_change', 'on_light_up', 'on_light_down', 'on_near', 'on_far'))
+        maxInt = sys.maxsize
+        minIn =- maxInt - 1
+        self.light_up = maxInt
+        self.light_down =  minInt
+        self.far = maxInt
+        self.near =  minInt
 
     def add_dir_callback(self, func):
         self.event_dir.on_change += func
+        return True
+
+    def add_light_up_callback(self, func, value):
+        self.event_dir.on_light_up += func
+        self.light_up = value
+        return True
+
+    def add_light_down_callback(self, func, value):
+        self.event_dir.on_light_down += func
+        self.on_light_down = value
+        return True
+
+    def add_near_callback(self, func, value):
+        self.event_dir.on_near += func
+        self.near = value
+        return True
+
+    def add_far_callback(self, func, value):
+        self.event_dir.on_far += func
+        self.far = value
         return True
 
     def start(self):
@@ -50,8 +76,32 @@ class Apds():
         return self.apds.readProximity()
 
     def worker(self):
+        def test_more(max, value, beenSet,func):
+            if more > value:
+                if not beenSet:
+                    func()
+                    return True
+                return beenSet
+            return False
+        def test_less(max, value, beenSet,func):
+            if more < value:
+                if not beenSet:
+                    func()
+                    return True
+                return beenSet
+            return False
+        b_light_up = False
+        b_light_down = False
+        b_far = False
+        b_near =  False
         while Apds.run:
             sleep(0.5)
+            light = self.getLight()
+            proxi = self.getProximity()
+            test_more(self.light_up, light, b_light_up, self.envent_dir.on_light_up)
+            test_less(self.light_down, light, b_light_down, self.envent_dir.on_light_down)
+            test_more(self.far, proxi, b_far, self.envent_dir.on_far)
+            test_less(self.near, proxi, b_near, self.envent_dir.on_near)
             if self.apds.isGestureAvailable():
                 motion = self.apds.readGesture()
                 if motion in Apds.apd_to_str:
