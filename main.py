@@ -109,6 +109,8 @@ def buttonPushCallback():
 
 def buttonReleaseCallback():
     global bPressed
+    if(not bPressed):
+        return
     print("button release")
     bPressed = False
     sendStopHotword()

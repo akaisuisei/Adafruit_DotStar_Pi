@@ -120,7 +120,7 @@ class AnimationVolume(Animation):
         self.mute = Image.open('image/mute.png').convert("RGB").load()
 
     def show(self, new_vol):
-        if (new_vol.value >= 16):
+        if (new_vol.value > 16):
             return
         if (new_vol.value <= 0):
             self.draw_image(0, 0, Animation.width, Animation.height,
@@ -129,7 +129,7 @@ class AnimationVolume(Animation):
             return
         self.clear(0)
         self.vol = new_vol.value
-        self.draw_rect(3, 15 - self.vol, 2, self.vol, 0xFFFFFF)
+        self.draw_rect(3, 16 - self.vol, 2, self.vol, 0xFFFFFF)
         self.write()
 
 class AnimationWeather(Animation):
@@ -150,11 +150,11 @@ class AnimationWeather(Animation):
     def show(self, dic):
         if dic.condition not in self.pixels:
             return
-        self.draw_image(1, 0, AnimationWeather.width, AnimationWeather.height,
+        self.draw_image(0, 0, AnimationWeather.width, AnimationWeather.height,
                        self.pixels[dic.condition][0])
         color = 0xFFFFFF
-        self.draw_number(dic.temperature / 10, 5, 9, color)
-        self.draw_number(dic.temperature % 10, 1, 9, color)
+        self.draw_number(dic.temperature % 10, 5, 9, color)
+        self.draw_number(dic.temperature / 10, 1, 9, color)
         self.write()
 
 class AnimationTime(Animation):
@@ -170,9 +170,9 @@ class AnimationTime(Animation):
             t2 = second % 60
         color = 0xFFFFFF
         self.clear(0)
-        self.draw_number(t1 / 10, 4, 1, color)
-        self.draw_number(t1 % 10, 0, 1, color)
-        self.draw_hline(0, 7, 3, color)
-        self.draw_number(t2 / 10, 4, 9, color)
-        self.draw_number(t2 % 10, 0, 9, color)
+        self.draw_number(t1 % 10, 5, 1, color)
+        self.draw_number(t1 / 10, 1, 1, color)
+        self.draw_hline(5, 7, 3, color)
+        self.draw_number(t2 % 10, 5, 9, color)
+        self.draw_number(t2 / 10, 1, 9, color)
         self.write()
