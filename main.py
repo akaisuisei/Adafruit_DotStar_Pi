@@ -8,8 +8,8 @@ import signal
 import sys
 import time
 
-MOVE_COUNTER = 30
-VOLUME_COUNTER = 30
+MOVE_COUNTER = 5
+VOLUME_COUNTER = 4
 BROKER_ADDRESS = "raspi-mika.local"
 siteId = 'default'
 haveBeenMoved = -1
