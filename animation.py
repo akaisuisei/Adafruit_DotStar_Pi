@@ -17,7 +17,7 @@ class Animation:
         self.strip = strip
 
     def prepare(self, x, y, color):
-        pos = x + y * Animation.width
+        pos = (Animation.width - x - 1) + y * Animation.width
         if (pos < len(Animation._next) and pos >= 0):
             Animation._next[pos] = color
 
@@ -47,10 +47,14 @@ class Animation:
             self.prepare(x , y + tmp, color)
 
     def draw_rect(self, x_start, y_start, w, h, color):
-        self.draw_vline(x_start, y_start, h, color)
-        self.draw_vline(x_start, y_start + w, h, color)
-        self.draw_hline(x_start, y_start, w, color)
-        self.draw_hline(x_start + h, y_start, w, color)
+        for i in range(x_start, x_start + w):
+            self.draw_vline(i, y_start, h, color)
+
+    def draw_image(self, x_s, y_s, w, h, img):
+        for y in range(h):
+            for x in range(w):
+                p = img[x, y]
+                self.prepare(x + x_s, y + y_s, Animation.pix_to_hex(p))
 
     def draw_number(self, num, x_start, y_start, color):
         arr = util.number_bit[num]
@@ -59,7 +63,7 @@ class Animation:
                 c = 0
                 if arr[y][x] == 1:
                     c = color
-                self.prepare(2 - x + x_start, y + y_start, c)
+                self.prepare(x + x_start, y + y_start, c)
 
     @staticmethod
     def s_write(strip):
@@ -102,10 +106,7 @@ class AnimationImage(Animation):
         self.item = 0;
 
     def show(self):
-        for y in range(Animation.height):
-            for x in range(Animation.width):
-                p = self.pixels[self.item][x, y]
-                self.prepare(x, y, Animation.pix_to_hex(p))
+        self.draw_image(0, 0,Animation.width, Animation.height, self.pixels[self.item])
         self.write()
         self.item += 1
         self.item %= self.num_image
@@ -116,16 +117,19 @@ class AnimationVolume(Animation):
     def __init__(self, strip, vol):
         Animation.__init__(self, strip)
         self.vol = vol
+        self.mute = Image.open('image/mute.png').convert("RGB").load()
 
     def show(self, new_vol):
         if (new_vol.value >= 16):
             return
         if (new_vol.value <= 0):
-            self.reset(0)
+            self.draw_image(0, 0, Animation.width, Animation.height,
+                       self.mute)
+            self.write()
             return
         self.clear(0)
         self.vol = new_vol.value
-        self.draw_rect(5, 15 - self.vol, 2, self.vol, 0xFFFFFF)
+        self.draw_rect(3, 15 - self.vol, 2, self.vol, 0xFFFFFF)
         self.write()
 
 class AnimationWeather(Animation):
@@ -146,13 +150,11 @@ class AnimationWeather(Animation):
     def show(self, dic):
         if dic.condition not in self.pixels:
             return
-        for y in range(AnimationWeather.height):
-            for x in range(AnimationWeather.width):
-                p = self.pixels[dic.condition][0][x, y]
-                self.prepare(x, y, Animation.pix_to_hex(p))
+        self.draw_image(1, 0, AnimationWeather.width, AnimationWeather.height,
+                       self.pixels[dic.condition][0])
         color = 0xFFFFFF
-        self.draw_number(dic.temperature / 10, 4, 9, color)
-        self.draw_number(dic.temperature % 10, 0, 9, color)
+        self.draw_number(dic.temperature / 10, 5, 9, color)
+        self.draw_number(dic.temperature % 10, 1, 9, color)
         self.write()
 
 class AnimationTime(Animation):
