@@ -99,11 +99,11 @@ class Animation:
 
     @staticmethod
     def rgb_to_hex(r, g, b):
-        return b + (g << 8) + (r << 16)
+        return b + (r << 8) + (g << 16)
 
     @staticmethod
     def pix_to_hex(p):
-        return Animation.rgb_to_hex(Animation.gamma[p[0]],
+        return Animation.rgb_to_hex(Animation.gamma[ap[0]],
                                     Animation.gamma[p[1]],
                                     Animation.gamma[p[2]])
 
@@ -127,21 +127,17 @@ class AnimationImage(Animation):
         self.item %= self.num_image
         time.sleep(0.1)
 
-class AnimationVolume(Animation):
+class AnimationRotate(Animation):
 
     def __init__(self, strip, vol):
         Animation.__init__(self, strip)
         self.vol = vol
-        self.mute = Image.open('image/mute.png').convert("RGB").load()
 
     def show(self, new_vol):
         if (new_vol.value > 16):
             return
         if (new_vol.value <= 0):
-            self.draw_image(0, 0, Animation.width, Animation.height,
-                       self.mute)
-            self.write()
-            return
+            new_vol.value = 1
         self.clear(0)
         self.vol = new_vol.value
         self.draw_rect(3, 16 - self.vol, 2, self.vol, 0xFFFFFF)

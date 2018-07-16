@@ -99,7 +99,7 @@ def volumeCallback(degree):
     volumeBeenSet = VOLUME_COUNTER
     volume += degree
     print("volume: {}".format(volume))
-    client.publish("concierge/commands/volume", volume)
+    client.publish("concierge/commands/remote/rotary", volume)
 
 def buttonPushCallback():
     global bPressed
@@ -117,6 +117,7 @@ def buttonReleaseCallback():
 
 def moveFingerCallback(direction):
     print("direction: {}".format(direction))
+    client.publish("concierge/commands/remote/swipe", direction)
 
 def objectMoveCallback():
     global haveBeenMoved

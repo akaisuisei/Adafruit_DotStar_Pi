@@ -13,7 +13,7 @@ class Timer(Action):
 class Time(Action):
     pass
 
-class Volume(Action):
+class Rotate(Action):
     pass
 
 class Weather(Action):

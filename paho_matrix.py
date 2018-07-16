@@ -31,16 +31,20 @@ skill_name = "snips-skill-matrix"
 pingTopic = 'concierge/apps/live/ping'
 dial_open = 'hermes/asr/startListening'
 dial_close = 'hermes/asr/stopListening'
-m_topic = 'concierge/feedback/led'
-show_hour = '{}/{}/time'.format(m_topic, site_id)
-show_animation = '{}/{}/animation'.format(m_topic, site_id)
-show_timer = '{}/{}/timer'.format(m_topic, site_id)
-show_weather = '{}/{}/weather'.format(m_topic, site_id)
-stop_display = '{}/{}/stop'.format(m_topic, site_id)
-add_image = '{}/{}/add/#'.format(m_topic, site_id)
-show_volume = 'concierge/commands/volume'
+m_topic = 'concierge/feedback/led/{}'.format(site_id)
+show_hour = '{}/time'.format(m_topic)
+show_animation = '{}/animation'.format(m_topic)
+show_timer = '{}/timer'.format(m_topic)
+show_weather = '{}/weather'.format(m_topic)
+stop_display = '{}/stop'.format(m_topic)
+add_image = '{}/add/#'.format(m_topic)
+show_rotate = '{}/rotary'.format(m_topic)
+show_swipe = '{}/swipe'.format(m_topic)
+show_rottee = 'concierge/commands/remote/rotary'
+show_swipe = 'concierge/commands/remote/swipe'
 skill = SnipsMatrix()
 last_session = None
+swipe_num = 0
 
 def dialogue_open(client, userdata, msg):
     global last_session
@@ -115,9 +119,23 @@ def display_timer(client, userdata, msg):
         duration = data['duration']
     skill.show_timer(duration)
 
-def display_volume(client, userdata, msg):
+def display_rotate(client, userdata, msg):
     print(msg.topic)
-    skill.show_volume(int(msg.payload))
+    skill.show_rotate(int(msg.payload))
+
+def display_swipe(client, userdata, msg):
+    global swipe_num
+    apps = ['music', 'light']
+    if msg.payload == 'right' or msg.payload == 'left':
+        swipe_num += 1
+    else:
+        swipe_num -= 1
+    if swipe_num < 0:
+        swipe_num = len(apps) - 1
+    if swipe_num >= len(apps):
+        swipe_num = 0
+    print(msg.topic)
+    skill.show_animation(apps[swipe_num], None)
 
 def display_weather(client, userdata, msg):
     print(msg.topic)
@@ -161,7 +179,8 @@ if __name__ == "__main__":
     client.message_callback_add(show_animation, display_animation)
     client.message_callback_add(stop_display, display_stop)
     client.message_callback_add(add_image, save_image)
-    client.message_callback_add(show_volume, display_volume)
+    client.message_callback_add(show_rotate, display_rotate)
+    client.message_callback_add(show_swipe, display_swipe)
     client.message_callback_add(show_weather, display_weather)
     signal.signal(signal.SIGINT, sig_handler)
     client.loop_forever()

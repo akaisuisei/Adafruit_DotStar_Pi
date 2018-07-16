@@ -8,7 +8,7 @@ import threading
 import time
 import os
 from animation import AnimationTime, AnimationImage, AnimationWeather
-from animation import AnimationVolume
+from animation import AnimationRotate
 import snipsMatrixAction
 
 TIMER = 30
@@ -49,7 +49,7 @@ class SnipsMatrix:
     queue = Queue.Queue()
     state_hotword = None
     state_waiting = None
-    state_volume = None
+    state_rotate = None
     state_time = None
     state_weather = None
     timerstop = None
@@ -63,15 +63,14 @@ class SnipsMatrix:
         numpixels = 128
         datapin   = 10
         clockpin  = 11
-        strip = Adafruit_DotStar(numpixels, datapin, clockpin, 1000000)
-        strip.begin()
-        strip.setBrightness(64)
-        self.strip = strip
-        SnipsMatrix.state_hotword = AnimationImage('hotword', strip)
-        SnipsMatrix.state_time = AnimationTime(strip)
-        SnipsMatrix.state_volume = AnimationVolume(strip, 0)
-        SnipsMatrix.state_weather = AnimationWeather(strip)
-        SnipsMatrix.custom_anim = SnipsMatrix.load_custom_animation(strip)
+        self.strip = Adafruit_DotStar(numpixels, datapin, clockpin, 1000000)
+        self.strip.begin()
+        self.strip.setBrightness(64)
+        SnipsMatrix.state_hotword = AnimationImage('hotword', self.strip)
+        SnipsMatrix.state_time = AnimationTime(self.strip)
+        SnipsMatrix.state_rotate = AnimationRotate(self.strip, 0)
+        SnipsMatrix.state_weather = AnimationWeather(self.strip)
+        SnipsMatrix.custom_anim = SnipsMatrix.load_custom_animation(self.strip)
         SnipsMatrix.queue.put(snipsMatrixAction.Hotword())
         SnipsMatrix.queue.put(snipsMatrixAction.Clear(DisplayPriority.hardware))
         t = threading.Thread(target=SnipsMatrix.worker, args=())
@@ -124,21 +123,21 @@ class SnipsMatrix:
             duration = 70
         SnipsMatrix.create_timer_time(duration)
 
-    def show_animation(self, name, duration):
-        SnipsMatrix.queue.put(name)
+    def show_animation(self, name, duration=15):
         SnipsMatrix.queue.put(snipsMatrixAction.CustomAnimation(name))
-        if duration is not None:
-            SnipsMatrix.create_short_app_timer(duration)
+        if duration is None:
+            duration = 12
+        SnipsMatrix.create_short_app_timer(duration)
 
     def show_timer(self, duration):
         if duration is None:
             return
         SnipsMatrix.create_timer(duration)
 
-    def show_volume(self, vol):
+    def show_rotate(self, vol):
         if vol is None:
             return
-        SnipsMatrix.queue.put(snipsMatrixAction.Volume(vol))
+        SnipsMatrix.queue.put(snipsMatrixAction.Rotate(vol))
         SnipsMatrix.create_hardware_timer(10)
 
     def show_weather(self, tmp, weather):
@@ -152,6 +151,8 @@ class SnipsMatrix:
         res = {}
         for k in names:
             res[k[0]] = AnimationImage(k[1], strip, True)
+        res['light'] = AnimationImage('light', strip)
+        res['music'] = AnimationImage('music', strip)
         return res
 
     @staticmethod
@@ -180,9 +181,9 @@ class SnipsMatrix:
                     item =""
                 else:
                     item = oldItem
-            elif isinstance(item, snipsMatrixAction.Volume):
+            elif isinstance(item, snipsMatrixAction.Rotate):
                 if DisplayPriority.can_I_do_it(DisplayPriority.hardware):
-                    SnipsMatrix.state_volume.show(item)
+                    SnipsMatrix.state_rotate.show(item)
                     item =""
                 else:
                     item = oldItem
@@ -207,13 +208,14 @@ class SnipsMatrix:
                 return
             elif isinstance(item, snipsMatrixAction.CustomAnimation):
                 if DisplayPriority.can_I_do_it(DisplayPriority.short_apps):
-                    SnipsMatrix.showCustomAnimation1(item)
+                    SnipsMatrix.showCustomAnimation(item)
                 else:
                     item = oldItem
     @staticmethod
     def showCustomAnimation(item):
-        if (item in SnipsMatrix.custom_anim):
-            SnipsMatrix.custom_anim[item].show()
+        if (item.value in SnipsMatrix.custom_anim):
+            print(item.value)
+            SnipsMatrix.custom_anim[item.value].show()
 
     @staticmethod
     def create_timer(duration, stop_time = None):
