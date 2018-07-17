@@ -34,7 +34,7 @@ class Apds():
         self.apds.enableGestureSensor()
         self.event_dir = Events(('on_change', 'on_light_up', 'on_light_down', 'on_near', 'on_far'))
         maxInt = sys.maxsize
-        minIn =- maxInt - 1
+        minInt =- maxInt - 1
         self.light_up = maxInt
         self.light_down =  minInt
         self.far = maxInt

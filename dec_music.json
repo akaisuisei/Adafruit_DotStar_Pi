@@ -1,0 +1,22 @@
+{
+    "input": "turn the volume down by seven",
+    "intent": {
+        "intentName": "snips-labs:volumeDown",
+        "probability": 0.939804
+    },
+    "slots": [
+        {
+            "rawValue": "seven",
+            "value": {
+                "kind": "Number",
+                "value": 7
+            },
+            "range": {
+                "start": 24,
+                "end": 29
+            },
+            "entity": "snips/number",
+            "slotName": "volume_lower"
+        }
+    ]
+}

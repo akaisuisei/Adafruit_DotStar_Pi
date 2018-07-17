@@ -1,0 +1,22 @@
+{
+    "input": "turn the volume up by seven",
+    "intent": {
+        "intentName": "snips-labs:volumeUp",
+        "probability": 0.90027475
+    },
+    "slots": [
+        {
+            "rawValue": "seven",
+            "value": {
+                "kind": "Number",
+                "value": 7
+            },
+            "range": {
+                "start": 22,
+                "end": 27
+            },
+            "entity": "snips/number",
+            "slotName": "volume_higher"
+        }
+    ]
+}

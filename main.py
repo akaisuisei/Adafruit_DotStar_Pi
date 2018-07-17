@@ -16,7 +16,6 @@ haveBeenMoved = -1
 volumeBeenSet = -1
 hotwordSended = False
 bPressed = False
-volume = 0
 client =  mqtt.Client()
 asrStart = "hermes/asr/startListening"
 asrStop = "hermes/asr/stopListening"
@@ -93,13 +92,11 @@ def sendStopHotword():
     client.publish("hermes/asr/stopListening",  pub_payload)
 
 def volumeCallback(degree):
-    global volume, volumeBeenSet
+    global volumeBeenSet
     if (bPressed):
         return
     volumeBeenSet = VOLUME_COUNTER
-    volume += degree
-    print("volume: {}".format(volume))
-    client.publish("concierge/commands/remote/rotary", volume)
+    client.publish("concierge/commands/remote/rotary", degree)
 
 def buttonPushCallback():
     global bPressed

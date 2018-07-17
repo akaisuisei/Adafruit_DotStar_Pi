@@ -103,7 +103,7 @@ class Animation:
 
     @staticmethod
     def pix_to_hex(p):
-        return Animation.rgb_to_hex(Animation.gamma[ap[0]],
+        return Animation.rgb_to_hex(Animation.gamma[p[0]],
                                     Animation.gamma[p[1]],
                                     Animation.gamma[p[2]])
 

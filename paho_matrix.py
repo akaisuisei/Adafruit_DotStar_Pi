@@ -40,11 +40,29 @@ stop_display = '{}/stop'.format(m_topic)
 add_image = '{}/add/#'.format(m_topic)
 show_rotate = '{}/rotary'.format(m_topic)
 show_swipe = '{}/swipe'.format(m_topic)
-show_rottee = 'concierge/commands/remote/rotary'
+show_rotate = 'concierge/commands/remote/rotary'
 show_swipe = 'concierge/commands/remote/swipe'
 skill = SnipsMatrix()
 last_session = None
 swipe_num = 0
+active_app = 'music'
+rotate_count = {'music': 0, 'light':0}
+json_dir = None
+def load_json_dir():
+    def load_json(path):
+        data = None
+        with open(path, 'r') as f:
+            data = json.load(f)
+        data['siteId'] = 'default'
+        data['customData'] = None
+        data['sessionId'] = None
+        return json.dumps(data)
+    data = {}
+    data['inc_light'] = ['hermes/intent/lightsShift', load_json('inc_light.json')]
+    data['dec_light'] = ['hermes/intent/lightsShift', load_json('dec_light.json')]
+    data['inc_music'] = ['hermes/intent/VolumeDown', load_json('inc_music.json')]
+    data['dec_music'] = ['hermes/intent/VolumeUp', load_json('dec_music.json')]
+    return data
 
 def dialogue_open(client, userdata, msg):
     global last_session
@@ -121,10 +139,20 @@ def display_timer(client, userdata, msg):
 
 def display_rotate(client, userdata, msg):
     print(msg.topic)
-    skill.show_rotate(int(msg.payload))
+    print("toto")
+    #simulate concierge
+    rotate_count[active_app] += int(msg.payload)
+    volume = rotate_count[active_app]
+    tmp = "inc_"
+    if (int(msg.payload) <= 0):
+        tmp = 'dec_'
+    data = json_dir[tmp + active_app]
+    print(data)
+    client.publish(data[0], data[1])
+    skill.show_rotate(volume)
 
 def display_swipe(client, userdata, msg):
-    global swipe_num
+    global swipe_num, active_app
     apps = ['music', 'light']
     if msg.payload == 'right' or msg.payload == 'left':
         swipe_num += 1
@@ -135,6 +163,7 @@ def display_swipe(client, userdata, msg):
     if swipe_num >= len(apps):
         swipe_num = 0
     print(msg.topic)
+    active_app = apps[swipe_num]
     skill.show_animation(apps[swipe_num], None)
 
 def display_weather(client, userdata, msg):
@@ -171,6 +200,7 @@ if __name__ == "__main__":
     client.on_connect = on_connect
     client.on_message = on_message_def
     client.connect(MQTT_IP_ADDR)
+    json_dir = load_json_dir()
     client.message_callback_add(pingTopic, on_message)
     client.message_callback_add(dial_open, dialogue_open)
     client.message_callback_add(dial_close, dialogue_close)

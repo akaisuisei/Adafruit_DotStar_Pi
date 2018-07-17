@@ -1,0 +1,35 @@
+{
+    "input": "dim the light by seven",
+    "intent": {
+        "intentName": "lightsShift",
+        "probability": 0.5249729
+    },
+    "slots": [
+        {
+            "rawValue": "dim",
+            "value": {
+                "kind": "Custom",
+                "value": "down"
+            },
+            "range": {
+                "start": 0,
+                "end": 3
+            },
+            "entity": "up_down_lights",
+            "slotName": "up_down"
+        },
+        {
+            "rawValue": "seven",
+            "value": {
+                "kind": "Number",
+                "value": 7
+            },
+            "range": {
+                "start": 17,
+                "end": 22
+            },
+            "entity": "snips/number",
+            "slotName": "intensity_number"
+        }
+    ]
+}

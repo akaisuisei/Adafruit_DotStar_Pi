@@ -160,7 +160,7 @@ class SnipsMatrix:
         item = ""
         oldItem = ""
         goback =False
-        flip = True
+        flip = False
         while True:
             time.sleep(0.01)
             if (not SnipsMatrix.queue.empty()):
