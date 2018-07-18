@@ -1,3 +1,4 @@
+import operator
 import threading
 from apds9960.const import *
 from apds9960 import APDS9960
@@ -31,8 +32,9 @@ class Apds():
         bus = smbus.SMBus(1)
         self.apds = APDS9960(bus)
         self.apds.setProximityIntLowThreshold(50)
+        self.apds.enableLightSensor()
         self.apds.enableGestureSensor()
-        self.event_dir = Events(('on_change', 'on_light_up', 'on_light_down', 'on_near', 'on_far'))
+        self.event = Events(('on_change', 'on_light_up', 'on_light_down', 'on_near', 'on_far'))
         maxInt = sys.maxsize
         minInt =- maxInt - 1
         self.light_up = maxInt
@@ -41,26 +43,26 @@ class Apds():
         self.near =  minInt
 
     def add_dir_callback(self, func):
-        self.event_dir.on_change += func
+        self.event.on_change += func
         return True
 
     def add_light_up_callback(self, func, value):
-        self.event_dir.on_light_up += func
+        self.event.on_light_up += func
         self.light_up = value
         return True
 
     def add_light_down_callback(self, func, value):
-        self.event_dir.on_light_down += func
-        self.on_light_down = value
+        self.event.on_light_down += func
+        self.light_down = value
         return True
 
     def add_near_callback(self, func, value):
-        self.event_dir.on_near += func
+        self.event.on_near += func
         self.near = value
         return True
 
     def add_far_callback(self, func, value):
-        self.event_dir.on_far += func
+        self.event.on_far += func
         self.far = value
         return True
 
@@ -76,19 +78,11 @@ class Apds():
         return self.apds.readProximity()
 
     def worker(self):
-        def test_more(max, value, beenSet,func):
-            if more > value:
+        def test(v1, v2, beenSet,func,op):
+            if op(v1, v2):
                 if not beenSet:
                     func()
-                    return True
-                return beenSet
-            return False
-        def test_less(max, value, beenSet,func):
-            if more < value:
-                if not beenSet:
-                    func()
-                    return True
-                return beenSet
+                return True
             return False
         b_light_up = False
         b_light_down = False
@@ -98,11 +92,11 @@ class Apds():
             sleep(0.5)
             light = self.getLight()
             proxi = self.getProximity()
-            test_more(self.light_up, light, b_light_up, self.envent_dir.on_light_up)
-            test_less(self.light_down, light, b_light_down, self.envent_dir.on_light_down)
-            test_more(self.far, proxi, b_far, self.envent_dir.on_far)
-            test_less(self.near, proxi, b_near, self.envent_dir.on_near)
+            b_light_up = test(self.light_up, light, b_light_up, self.event.on_light_up, operator.lt)
+            b_light_down = test(self.light_down, light, b_light_down, self.event.on_light_down, operator.gt)
+            b_far = test(self.far, proxi, b_far, self.event.on_far, operator.gt)
+            b_near = test(self.near, proxi, b_near, self.event.on_near, operator.lt)
             if self.apds.isGestureAvailable():
                 motion = self.apds.readGesture()
                 if motion in Apds.apd_to_str:
-                    self.event_dir.on_change(Apds.apd_to_str[motion])
+                    self.event.on_change(Apds.apd_to_str[motion])
