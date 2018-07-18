@@ -20,7 +20,7 @@ client =  mqtt.Client()
 asrStart = "hermes/asr/startListening"
 asrStop = "hermes/asr/stopListening"
 pub_payload = None
-#mpu = Mpu()
+mpu = Mpu()
 apds = Apds()
 def lup():
     print("lup")
@@ -37,8 +37,8 @@ def main():
     rotary.add_rotate_callback(volumeCallback)
     rotary.add_push_callback(buttonPushCallback)
     rotary.add_release_callback(buttonReleaseCallback)
-    #mpu.add_callback(objectMoveCallback)
-    #mpu.start()
+    mpu.add_callback(objectMoveCallback)
+    mpu.start()
     apds.add_dir_callback(moveFingerCallback)
     apds.add_light_up_callback(lup, 1000)
     apds.add_light_down_callback(ldown, 300)
@@ -66,7 +66,7 @@ def main():
 
 def sig_handler(sig, frame):
     client.disconnect()
-    #mpu.stop()
+    mpu.stop()
     Apds.run =False
     GPIO.cleanup()
     sys.exit(0)
