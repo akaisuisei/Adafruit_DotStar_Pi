@@ -17,19 +17,6 @@
             },
             "entity": "up_down_lights",
             "slotName": "up_down"
-        },
-        {
-            "rawValue": "seven",
-            "value": {
-                "kind": "Number",
-                "value": 7
-            },
-            "range": {
-                "start": 22,
-                "end": 27
-            },
-            "entity": "snips/number",
-            "slotName": "intensity_number"
         }
     ]
 }

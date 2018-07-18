@@ -55,13 +55,13 @@ def load_json_dir():
             data = json.load(f)
         data['siteId'] = 'default'
         data['customData'] = None
-        data['sessionId'] = None
+        data['sessionId'] = '317r637fhnfcl3u2ej9ienj'
         return json.dumps(data)
     data = {}
     data['inc_light'] = ['hermes/intent/lightsShift', load_json('inc_light.json')]
     data['dec_light'] = ['hermes/intent/lightsShift', load_json('dec_light.json')]
-    data['inc_music'] = ['hermes/intent/VolumeDown', load_json('inc_music.json')]
-    data['dec_music'] = ['hermes/intent/VolumeUp', load_json('dec_music.json')]
+    data['inc_music'] = ['hermes/intent/VolumeUp', load_json('inc_music.json')]
+    data['dec_music'] = ['hermes/intent/VolumeDown', load_json('dec_music.json')]
     return data
 
 def dialogue_open(client, userdata, msg):
