@@ -16,7 +16,7 @@ haveBeenMoved = -1
 volumeBeenSet = -1
 hotwordSended = False
 bPressed = False
-c =  Concierge(siteId)
+c =  Concierge(BROKER_ADDRESS, siteId)
 asrStart = "hermes/asr/startListening"
 asrStop = "hermes/asr/stopListening"
 pub_payload = None
@@ -49,7 +49,7 @@ def main():
     apds.start()
     signal.signal(signal.SIGINT, sig_handler)
     c.subscribe(asrStart, on_startListening)
-    c.subscride(asrStop, on_stopListening)
+    c.subscribe(asrStop, on_stopListening)
     while(True):
         if(volumeBeenSet > 0):
             volumeBeenSet -= 1
@@ -95,9 +95,10 @@ def sendHotword():
     c.startHotword()
 
 def sendStopHotword():
-    global hotwordSended
+    global hotwordSended, sessionId
     hotwordSended = False
-    c.stopHotword()
+    c.stopHotword(sessionId)
+    sessionId = None
 
 def volumeCallback(degree):
     global volumeBeenSet
@@ -113,12 +114,11 @@ def buttonPushCallback():
     sendHotword()
 
 def buttonReleaseCallback():
-    global bPressed, sessionId
+    global bPressed
     if(not bPressed or sessionId is None):
         return
     print("button release")
     sendStopHotword(sessionId)
-    sessionId = None
     bPressed = False
 
 def moveFingerCallback(direction):
