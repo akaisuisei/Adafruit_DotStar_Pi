@@ -1,8 +1,8 @@
+from concierge_python.concierge import Concierge
 import RPi.GPIO as GPIO
 from rotary import RotaryEncoder
 from mpu import Mpu
 from apds import Apds
-import paho.mqtt.client as mqtt
 import json
 import signal
 import sys
@@ -16,12 +16,13 @@ haveBeenMoved = -1
 volumeBeenSet = -1
 hotwordSended = False
 bPressed = False
-client =  mqtt.Client()
+c =  Concierge(siteId)
 asrStart = "hermes/asr/startListening"
 asrStop = "hermes/asr/stopListening"
 pub_payload = None
 mpu = Mpu()
 apds = Apds()
+
 def lup():
     print("lup")
 def ldown():
@@ -31,6 +32,7 @@ def near():
     print("near")
 def far():
     print("far")
+
 def main():
     global haveBeenMoved, volumeBeenSet
     rotary = RotaryEncoder()
@@ -46,11 +48,8 @@ def main():
     apds.add_far_callback(far, 17)
     apds.start()
     signal.signal(signal.SIGINT, sig_handler)
-    client.connect(BROKER_ADDRESS)
-    client.on_connect = on_connect
-    client.message_callback_add(asrStart, on_startListening)
-    client.message_callback_add(asrStop, on_stopListening)
-    client.loop_start()
+    c.subscribe(asrStart, on_startListening)
+    c.subscride(asrStop, on_stopListening)
     while(True):
         if(volumeBeenSet > 0):
             volumeBeenSet -= 1
@@ -65,50 +64,47 @@ def main():
         time.sleep(0.2)
 
 def sig_handler(sig, frame):
-    client.disconnect()
+    c.disconnect()
     mpu.stop()
     Apds.run =False
     GPIO.cleanup()
     sys.exit(0)
 
-def on_connect(client, userdata, flags, rc):
-    print('connected')
-    client.subscribe("hermes/asr/stopListening")
-
 def on_startListening(client, userdata, message):
-    global pub_payload
+    global sessionId
+    if not hotwordSended:
+        return
     msg = json.loads(message.payload.decode("utf-8","ignore"))
     if(msg['siteId'] != siteId):
         return
-    client.unsubscribe("hermes/asr/startListening")
-    pub_payload = '{"siteId":"remote","sessionId":"%s"}' % msg['sessionId']
+    sessionId = msg['sessionId']
 
 def on_stopListening(client, userdata, message):
-    global hotwordSended
-    print(message.payload)
+    global hotwordSended, sessionId
+    if not hotwordSended:
+        return
     msg = json.loads(message.payload.decode("utf-8","ignore"))
     if(msg['siteId'] != siteId):
         return
     hotwordSended = False
+    sessionId = False
 
 def sendHotword():
     global hotwordSended
     hotwordSended = True
-    client.subscribe("hermes/asr/startListening")
-    client.publish("hermes/hotword/default/detected",
-                   '{"siteId":"%s","modelId":"default"}' % siteId)
+    c.startHotword()
 
 def sendStopHotword():
     global hotwordSended
     hotwordSended = False
-    client.publish("hermes/asr/stopListening",  pub_payload)
+    c.stopHotword()
 
 def volumeCallback(degree):
     global volumeBeenSet
     if (bPressed):
         return
     volumeBeenSet = VOLUME_COUNTER
-    client.publish("concierge/commands/remote/rotary", degree)
+    c.publishRotary(degree)
 
 def buttonPushCallback():
     global bPressed
@@ -117,16 +113,17 @@ def buttonPushCallback():
     sendHotword()
 
 def buttonReleaseCallback():
-    global bPressed
-    if(not bPressed):
+    global bPressed, sessionId
+    if(not bPressed or sessionId is None):
         return
     print("button release")
+    sendStopHotword(sessionId)
+    sessionId = None
     bPressed = False
-    sendStopHotword()
 
 def moveFingerCallback(direction):
     print("direction: {}".format(direction))
-    client.publish("concierge/commands/remote/swipe", direction)
+    c.publishSwipe(direction)
 
 def objectMoveCallback():
     global haveBeenMoved

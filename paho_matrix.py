@@ -7,12 +7,11 @@ import os
 import time
 import threading
 from datetime import datetime
-import paho.mqtt.client as mqtt
 from snipsmatrix import SnipsMatrix
 import socket
 import signal
 import sys
-
+from concierge_python.concierge import Concierge
 
 CONFIGURATION_ENCODING_FORMAT = "utf-8"
 CONFIG_INI = "config.ini"
@@ -25,29 +24,17 @@ DIR = os.path.dirname(os.path.realpath(__file__)) + '/alarm/'
 
 alive = 0;
 lang = "EN"
-client = None
 site_id = "default"
-skill_name = "snips-skill-matrix"
-pingTopic = 'concierge/apps/live/ping'
+_id= "snips-skill-matrix"
 dial_open = 'hermes/asr/startListening'
 dial_close = 'hermes/asr/stopListening'
-m_topic = 'concierge/feedback/led/{}'.format(site_id)
-show_hour = '{}/time'.format(m_topic)
-show_animation = '{}/animation'.format(m_topic)
-show_timer = '{}/timer'.format(m_topic)
-show_weather = '{}/weather'.format(m_topic)
-stop_display = '{}/stop'.format(m_topic)
-add_image = '{}/add/#'.format(m_topic)
-show_rotate = '{}/rotary'.format(m_topic)
-show_swipe = '{}/swipe'.format(m_topic)
-show_rotate = 'concierge/commands/remote/rotary'
-show_swipe = 'concierge/commands/remote/swipe'
 skill = SnipsMatrix()
 last_session = None
 swipe_num = 0
 active_app = 'music'
 rotate_count = {'music': 0, 'light':0}
 json_dir = None
+
 def load_json_dir():
     def load_json(path):
         data = None
@@ -64,7 +51,7 @@ def load_json_dir():
     data['dec_music'] = ['hermes/intent/VolumeDown', load_json('dec_music.json')]
     return data
 
-def dialogue_open(client, userdata, msg):
+def on_dialogue_open(client, userdata, msg):
     global last_session
     print(msg.topic)
     print(msg.payload)
@@ -73,7 +60,7 @@ def dialogue_open(client, userdata, msg):
         skill.hotword_detected()
         last_session = data['sessionId']
 
-def dialogue_close(client, userdata, msg):
+def on_dialogue_close(client, userdata, msg):
     print(msg.topic)
     print(msg.payload)
     data = json.loads(msg.payload)
@@ -82,11 +69,11 @@ def dialogue_close(client, userdata, msg):
     if last_session and data['sessionId'] and data['sessionId'] == last_session:
         skill.stop_hotword()
 
-def display_stop(client, userdata, msg):
+def on_stop(client, userdata, msg):
     print(msg.topic)
     skill.stop()
 
-def save_image(client, userdata, msg):
+def on_image(client, userdata, msg):
     print(msg.topic)
     tmp = msg.topic.split('/')
     name = tmp [-1]
@@ -96,7 +83,7 @@ def save_image(client, userdata, msg):
     image = msg.payload
     skill.save_image(name, directory, image)
 
-def display_time(client, userdata, msg):
+def on_time(client, userdata, msg):
     print('time')
     try:
         data = json.loads(msg.payload)
@@ -108,7 +95,7 @@ def display_time(client, userdata, msg):
         duration = data['duration']
     skill.show_time(duration)
 
-def display_animation(client, userdata, msg):
+def on_animation(client, userdata, msg):
     print(msg.topic)
     try:
         data = json.loads(msg.payload)
@@ -123,7 +110,7 @@ def display_animation(client, userdata, msg):
         duration = data['duration']
     skill.show_animation(animation, duration)
 
-def display_timer(client, userdata, msg):
+def on_timer(client, userdata, msg):
     print(msg.topic)
     try:
         data = json.loads(msg.payload)
@@ -137,7 +124,7 @@ def display_timer(client, userdata, msg):
         duration = data['duration']
     skill.show_timer(duration)
 
-def display_rotate(client, userdata, msg):
+def on_rotary(client, userdata, msg):
     print(msg.topic)
     print("toto")
     #simulate concierge
@@ -151,7 +138,7 @@ def display_rotate(client, userdata, msg):
     client.publish(data[0], data[1])
     skill.show_rotate(volume)
 
-def display_swipe(client, userdata, msg):
+def on_swipe(client, userdata, msg):
     global swipe_num, active_app
     apps = ['music', 'light']
     if msg.payload == 'right' or msg.payload == 'left':
@@ -166,8 +153,7 @@ def display_swipe(client, userdata, msg):
     active_app = apps[swipe_num]
     skill.show_animation(apps[swipe_num], None)
 
-def display_weather(client, userdata, msg):
-    print(msg.topic)
+def on_weather(client, userdata, msg):
     try:
         tmp = json.loads(msg.payload)
     except:
@@ -177,40 +163,28 @@ def display_weather(client, userdata, msg):
         return
     skill.show_weather(tmp['temp'], tmp['weather'])
 
-def on_connect(client, userdata, flags, rc):
-    print('connected')
-    client.subscribe(pingTopic)
-    client.subscribe(dial_open)
-    client.subscribe(dial_close)
-    client.subscribe("{}/#".format('concierge'))
-
-def on_message(client, userdata, msg):
-    client.publish('concierge/apps/live/pong', '{"result":"{}"}'.format(skill_name))
-
-def on_message_def(client, userdata, msg):
-    print(msg.topic)
+def on_ping(client, userdata, msg):
+        concierge.publishPong(_id)
 
 def sig_handler(sig, frame):
-    client.disconnect()
+    c.disconnect()
     skill.exit()
     sys.exit(0)
 
 if __name__ == "__main__":
-    client = mqtt.Client()
-    client.on_connect = on_connect
-    client.on_message = on_message_def
-    client.connect(MQTT_IP_ADDR)
-    json_dir = load_json_dir()
-    client.message_callback_add(pingTopic, on_message)
-    client.message_callback_add(dial_open, dialogue_open)
-    client.message_callback_add(dial_close, dialogue_close)
-    client.message_callback_add(show_hour, display_time)
-    client.message_callback_add(show_timer, display_timer)
-    client.message_callback_add(show_animation, display_animation)
-    client.message_callback_add(stop_display, display_stop)
-    client.message_callback_add(add_image, save_image)
-    client.message_callback_add(show_rotate, display_rotate)
-    client.message_callback_add(show_swipe, display_swipe)
-    client.message_callback_add(show_weather, display_weather)
     signal.signal(signal.SIGINT, sig_handler)
-    client.loop_forever()
+    concierge = Concierge(MQTT_IP_ADDR, site_id, False)
+    json_dir = load_json_dir()
+    c = concierge
+    c.subscribePing(on_ping)
+    c.subscribe(dial_open, on_dialogue_open)
+    c.subscribe(dial_close, on_dialogue_close)
+    c.subscribeTime(on_time)
+    c.subscribeTimer(on_timer)
+    c.subscribeAnimation(on_animation)
+    c.subscribeStop(on_stop)
+    c.subscribeImage(on_image)
+    c.subscribeRotary(on_rotary)
+    c.subscribeSwipe(on_swipe)
+    c.subscribeWeather(on_weather)
+    c.loop_forever()
