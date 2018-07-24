@@ -74,77 +74,39 @@ class ConciergeMatrix():
             data['sessionId'] == self.current_session):
             self.skill.stop_hotword()
 
-    def on_stop(self, client, userdata, msg):
-        print(msg.topic)
+    def on_stop(self):
         self.skill.stop()
 
-    def on_image(self, client, userdata, msg):
-        print(msg.topic)
-        tmp = msg.topic.split('/')
-        name = tmp [-1]
-        directory = tmp[-2]
-        if (tmp[-3] != 'add'):
-            return
-        image = msg.payload
+    def on_image(self, name, directory, image):
         self.skill.save_image(name, directory, image)
 
-    def on_time(self, client, userdata, msg):
-        print('time')
-        try:
-            data = json.loads(msg.payload)
-        except:
-            print('time not a json')
-            return
-        duration = None
-        if ('duration' in data):
-            duration = data['duration']
+    def on_time(self, duration, value):
         self.skill.show_time(duration)
 
-    def on_animation(self, client, userdata, msg):
-        print(msg.topic)
-        try:
-            data = json.loads(msg.payload)
-        except:
-            print('animation not a json')
+    def on_animation(self, animation, duration):
+        if not animation:
             return
-        if ('animation' not in data):
-            return
-        animation = data['animation']
-        duration = None
-        if ('duration' in data):
-            duration = data['duration']
         self.skill.show_animation(animation, duration)
 
-    def on_timer(self, client, userdata, msg):
-        print(msg.topic)
-        try:
-            data = json.loads(msg.payload)
-        except:
-            print('timer not a json')
-            return
-        duration = None
-        if (not isinstance(data, dict)):
-            return
-        if ('duration' in data):
-            duration = data['duration']
+    def on_timer(self, duration):
+        print(duration)
         self.skill.show_timer(duration)
 
-    def on_rotary(self, client, userdata, msg):
-        print(msg.topic)
+    def on_rotary(self, value):
         #simulate concierge
-        self.rotate_count[self.active_app] += int(msg.payload)
+        self.rotate_count[self.active_app] += value
         volume = self.rotate_count[self.active_app]
         tmp = "inc_"
-        if (int(msg.payload) <= 0):
+        if (value <= 0):
             tmp = 'dec_'
         data = self.json_dir[tmp + self.active_app]
         print(data)
         self.c.publish(data[0], data[1])
         self.skill.show_rotate(volume)
 
-    def on_swipe(self, client, userdata, msg):
+    def on_swipe(self, value):
         apps = ['music', 'light']
-        if msg.payload == 'right' or msg.payload == 'left':
+        if value == 'right' or value == 'left':
             self.swipe_num += 1
         else:
             self.swipe_num -= 1
@@ -152,21 +114,15 @@ class ConciergeMatrix():
             self.swipe_num = len(apps) - 1
         if self.swipe_num >= len(apps):
             self.swipe_num = 0
-        print(msg.topic)
         self.active_app = apps[self.swipe_num]
         self.skill.show_animation(apps[self.swipe_num], None)
 
-    def on_weather(self, client, userdata, msg):
-        try:
-            tmp = json.loads(msg.payload)
-        except:
-            print('weather not a json')
+    def on_weather(self, temperature, condition):
+        if  temperature is None or condition in None:
             return
-        if ('temp' not in tmp or 'weather' not in tmp):
-            return
-        self.skill.show_weather(tmp['temp'], tmp['weather'])
+        self.skill.show_weather(temperature, degree)
 
-    def on_ping(self, client, userdata, msg):
+    def on_ping(self):
         self.c.publishPong(_id)
 
     def stop(self):
