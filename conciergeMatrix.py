@@ -17,7 +17,6 @@ class ConciergeMatrix():
     _id= "snips-skill-matrix"
     dial_open = 'hermes/asr/startListening'
     dial_close = 'hermes/asr/stopListening'
-    rotate_count = {'music': 0, 'light':0}
 
     def __init__(self, siteId, c):
         self.json_dir = ConciergeMatrix.load_json_dir()
@@ -26,7 +25,8 @@ class ConciergeMatrix():
         self.swipe_num = 0
         self.active_app = 'music'
         self.site_id = siteId
-        alive = 0;
+        self.swipe_num = 0
+        self.rotate_count = {'music': 0, 'light':0}
         c.subscribePing(self.on_ping)
         c.subscribe(ConciergeMatrix.dial_open, self.on_dialogue_open)
         c.subscribe(ConciergeMatrix.dial_close, self.on_dialogue_close)
@@ -132,8 +132,8 @@ class ConciergeMatrix():
     def on_rotary(self, client, userdata, msg):
         print(msg.topic)
         #simulate concierge
-        rotate_count[self.active_app] += int(msg.payload)
-        volume = rotate_count[self.active_app]
+        self.rotate_count[self.active_app] += int(msg.payload)
+        volume = self.rotate_count[self.active_app]
         tmp = "inc_"
         if (int(msg.payload) <= 0):
             tmp = 'dec_'
@@ -148,13 +148,13 @@ class ConciergeMatrix():
             self.swipe_num += 1
         else:
             self.swipe_num -= 1
-        if swipe_num < 0:
+        if self.swipe_num < 0:
             self.swipe_num = len(apps) - 1
-        if swipe_num >= len(apps):
+        if self.swipe_num >= len(apps):
             self.swipe_num = 0
         print(msg.topic)
-        self.active_app = apps[swipe_num]
-        self.skill.show_animation(apps[swipe_num], None)
+        self.active_app = apps[self.swipe_num]
+        self.skill.show_animation(apps[self.swipe_num], None)
 
     def on_weather(self, client, userdata, msg):
         try:

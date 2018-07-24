@@ -64,8 +64,7 @@ class Remote():
     def stop(self):
         self.run = False
         self.mpu.stop()
-        self.Apds.run =False
-        sys.exit(0)
+        Apds.run =False
 
     def on_startListening(self, client, userdata, message):
         if not self.hotwordSended:
@@ -79,7 +78,7 @@ class Remote():
         if not self.hotwordSended:
             return
         msg = json.loads(message.payload.decode("utf-8","ignore"))
-        if(msg['siteId'] != siteId):
+        if(msg['siteId'] != self.siteId):
             return
         self.hotwordSended = False
         self.sessionId = None
