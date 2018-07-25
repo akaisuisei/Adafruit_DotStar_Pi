@@ -7,7 +7,10 @@ import events
 class Mpu:
     run = False
     def __init__(self):
-        self.sensor = mpu6050(0x68)
+        try:
+            self.sensor = mpu6050(0x68)
+        except:
+            return None
         sensibility = 3
         self.sensor.set_value_at_address(0x07,0x68)
         self.sensor.set_value_at_address(0x20,0x37)

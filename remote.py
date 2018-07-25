@@ -34,6 +34,9 @@ class Remote():
         self.mpu.start()
 
     def __init__(self, siteId, concierge):
+        self._init_mpu()
+        self._init_apds()
+        self._init_rotary()
         self.siteId = siteId
         self.haveBeenMoved = -1
         self.rotarySet = -1
@@ -43,9 +46,6 @@ class Remote():
         self.c = concierge
         self.c.subscribe(Remote.asrStart, self.on_startListening)
         self.c.subscribe(Remote.asrStop, self.on_stopListening)
-        self._init_mpu()
-        self._init_apds()
-        self._init_rotary()
         self.run = True
 
     def start(self):
