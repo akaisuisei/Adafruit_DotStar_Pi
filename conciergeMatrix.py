@@ -118,9 +118,9 @@ class ConciergeMatrix():
         self.skill.show_animation(apps[self.swipe_num], None)
 
     def on_weather(self, temperature, condition):
-        if  temperature is None or condition in None:
+        if  temperature is None or condition is None:
             return
-        self.skill.show_weather(temperature, degree)
+        self.skill.show_weather(temperature, condition)
 
     def on_ping(self):
         self.c.publishPong(_id)

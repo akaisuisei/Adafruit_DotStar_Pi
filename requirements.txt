@@ -1,0 +1,7 @@
+apds9960==0.2
+git+git://github.com/akaisuisei/concierge-python
+Events==0.3
+mpu6050-raspberrypi==1.0.3.4
+Pillow==5.2.0
+RPi.GPIO==0.6.3
+spidev==3.2
