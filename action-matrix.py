@@ -18,6 +18,7 @@ if __name__ == "__main__":
     r = None
     try:
         r = Remote("default", c)
+        r.start()
     except:
         pass
     c.loop_forever()

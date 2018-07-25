@@ -6,6 +6,7 @@ from apds import Apds
 import json
 import signal
 import sys
+import threading
 import time
 
 class Remote():
@@ -46,6 +47,11 @@ class Remote():
         self._init_apds()
         self._init_rotary()
         self.run = True
+
+    def start(self):
+        self.run = True
+        self.t = threading.Thread(target=self.worker, args=())
+        self.t.start()
 
     def worker(self):
         while(self.run):
@@ -140,4 +146,5 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, sig_handler)
     c = Concierge(MQTT_IP_ADDR, "default", False)
     a = Remote("default", c)
+    a.start()
     c.loop_forever()
