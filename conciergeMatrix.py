@@ -28,8 +28,8 @@ class ConciergeMatrix():
         self.swipe_num = 0
         self.rotate_count = {'music': 0, 'light':0}
         c.subscribePing(self.on_ping)
-        c.subscribe(ConciergeMatrix.dial_open, self.on_dialogue_open)
-        c.subscribe(ConciergeMatrix.dial_close, self.on_dialogue_close)
+        c.subscribeAsrStart(self.on_dialogue_open)
+        c.subscribeAsrStop(self.on_dialogue_close)
         c.subscribeTime(self.on_time)
         c.subscribeTimer(self.on_timer)
         c.subscribeAnimation(self.on_animation)

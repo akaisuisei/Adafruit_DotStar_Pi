@@ -27,16 +27,11 @@ class Remote():
         self.apds.add_light_down_callback(self.on_ldown, 300)
         self.apds.add_near_callback(self.on_near, 40)
         self.apds.add_far_callback(self.on_far, 17)
-        self.apds.start()
     def _init_mpu(self):
         self.mpu = Mpu()
         self.mpu.add_callback(self.on_move)
-        self.mpu.start()
 
     def __init__(self, siteId, concierge):
-        self._init_mpu()
-        self._init_apds()
-        self._init_rotary()
         self.siteId = siteId
         self.haveBeenMoved = -1
         self.rotarySet = -1
@@ -44,15 +39,20 @@ class Remote():
         self.bPressed = False
         self.sessionId = None
         self.c = concierge
-        self.c.subscribe(Remote.asrStart, self.on_startListening)
-        self.c.subscribe(Remote.asrStop, self.on_stopListening)
         self.run = True
-
+        self._init_mpu()
+        self._init_apds()
+        self._init_rotary()
+        self.c.subscribeAsrStart(self.on_startListening)
+        self.c.subscribeAsrStop(self.on_stopListening)
     def start(self):
         self.run = True
+        self.apds.start()
+        self.mpu.start()
         self.t = threading.Thread(target=self.worker, args=())
         self.t.start()
 
+        print("toto")
     def worker(self):
         while(self.run):
             if(self.rotarySet > 0):

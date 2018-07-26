@@ -7,18 +7,6 @@ import events
 class Mpu:
     run = False
     def __init__(self):
-        try:
-            self.sensor = mpu6050(0x68)
-        except:
-            return None
-        sensibility = 3
-        self.sensor.set_value_at_address(0x07,0x68)
-        self.sensor.set_value_at_address(0x20,0x37)
-        self.sensor.set_value_at_address(0x01,0x1C)
-        self.sensor.set_value_at_address(sensibility,0x1F)
-        self.sensor.set_value_at_address(20,0x20)
-        self.sensor.set_value_at_address(0x15,0x69)
-        self.sensor.set_value_at_address(0x40,0x38)
         self.event = events.Events()
         self.max_counter = 2
 
@@ -35,6 +23,18 @@ class Mpu:
         Mpu.run = False
 
     def worker(self):
+        try:
+            self.sensor = mpu6050(0x68)
+        except:
+            return None
+        sensibility = 3
+        self.sensor.set_value_at_address(0x07,0x68)
+        self.sensor.set_value_at_address(0x20,0x37)
+        self.sensor.set_value_at_address(0x01,0x1C)
+        self.sensor.set_value_at_address(sensibility,0x1F)
+        self.sensor.set_value_at_address(20,0x20)
+        self.sensor.set_value_at_address(0x15,0x69)
+        self.sensor.set_value_at_address(0x40,0x38)
         counter = 0
         while(Mpu.run):
             sensorStatus = self.sensor.read_int()
