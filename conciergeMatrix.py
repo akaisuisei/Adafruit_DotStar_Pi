@@ -77,7 +77,7 @@ class ConciergeMatrix():
         self.skill.save_image(name, directory, image)
 
     def on_time(self, duration, value):
-        self.skill.show_time(duration)
+        self.skill.show_time(duration, value)
 
     def on_animation(self, animation, duration):
         if not animation:

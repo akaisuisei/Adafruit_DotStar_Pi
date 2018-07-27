@@ -118,10 +118,10 @@ class SnipsMatrix:
                                                        self.strip,
                                                     True)
 
-    def show_time(self, duration):
+    def show_time(self, duration, value):
         if duration is None:
             duration = 70
-        SnipsMatrix.create_timer_time(duration)
+        SnipsMatrix.create_timer_time(duration, value)
 
     def show_animation(self, name, duration=15):
         SnipsMatrix.queue.put(snipsMatrixAction.CustomAnimation(name))
@@ -260,8 +260,11 @@ class SnipsMatrix:
         SnipsMatrix.timer_short_app.start()
 
     @staticmethod
-    def create_timer_time(duration):
-        SnipsMatrix.queue.put(snipsMatrixAction.Time(time.time()))
+    def create_timer_time(duration, value):
+        if value is None or value <= 0:
+            SnipsMatrix.queue.put(snipsMatrixAction.Time(time.time()))
+        else:
+            SnipsMatrix.queue.put(snipsMatrixAction.Time(value))
         if SnipsMatrix.timer_short_app:
             SnipsMatrix.timer_short_app.cancel()
             del SnipsMatrix.timer_short_app
@@ -272,7 +275,7 @@ class SnipsMatrix:
             return
         SnipsMatrix.timer_short_app = threading.Timer(1,
                                             SnipsMatrix.create_timer_time,
-                                            args = [duration - 1])
+                                            args = [duration - 1, value])
         SnipsMatrix.timer_short_app.start()
 
     @staticmethod
