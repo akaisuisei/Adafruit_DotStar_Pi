@@ -52,7 +52,6 @@ class Remote():
         self.t = threading.Thread(target=self.worker, args=())
         self.t.start()
 
-        print("toto")
     def worker(self):
         while(self.run):
             if(self.rotarySet > 0):

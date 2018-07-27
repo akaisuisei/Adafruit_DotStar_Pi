@@ -15,11 +15,9 @@ from concierge_python.concierge import Concierge
 
 class ConciergeMatrix():
     _id= "snips-skill-matrix"
-    dial_open = 'hermes/asr/startListening'
-    dial_close = 'hermes/asr/stopListening'
 
     def __init__(self, siteId, c):
-        self.json_dir = ConciergeMatrix.load_json_dir()
+        self.json_dir = ConciergeMatrix.load_json_dir(siteId)
         self.skill = SnipsMatrix()
         self.current_session = None
         self.swipe_num = 0
@@ -41,12 +39,12 @@ class ConciergeMatrix():
         self.c = c
 
     @staticmethod
-    def load_json_dir():
+    def load_json_dir(siteId):
         def load_json(path):
             data = None
             with open(path, 'r') as f:
                 data = json.load(f)
-            data['siteId'] = 'default'
+            data['siteId'] = siteId
             data['customData'] = None
             data['sessionId'] = '317r637fhnfcl3u2ej9ienj'
             return json.dumps(data)
@@ -58,21 +56,19 @@ class ConciergeMatrix():
         return data
 
     def on_dialogue_open(self, client, userdata, msg):
-        print(msg.topic)
         data = json.loads(msg.payload)
         if data['siteId'] == self.site_id:
             self.skill.hotword_detected()
             self.current_session = data['sessionId']
 
     def on_dialogue_close(self, client, userdata, msg):
-        print(msg.topic)
         data = json.loads(msg.payload)
-        if (data['siteId'] != self.site_id):
+        if (data['siteId'].encode('ascii', 'ignore') != self.site_id):
             return
-        if (self.current_session and
-            data['sessionId'] and
-            data['sessionId'] == self.current_session):
-            self.skill.stop_hotword()
+        #if (self.current_session is not None and
+        #    data['sessionId'] and
+        #    data['sessionId'] == self.current_session):
+        self.skill.stop_hotword()
 
     def on_stop(self):
         self.skill.stop()
@@ -118,6 +114,8 @@ class ConciergeMatrix():
         self.skill.show_animation(apps[self.swipe_num], None)
 
     def on_weather(self, temperature, condition):
+        print(temperature)
+        print(condition)
         if  temperature is None or condition is None:
             return
         self.skill.show_weather(temperature, condition)
